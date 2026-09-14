@@ -4,25 +4,25 @@
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Large data and model files
-*.csv
-*.pkl
-*.h5
-*.pt
-
 # OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
+
+# Test artifacts
+*.pdf
+test_*.py
+scratch/
+
+# Database files
+data/*.db
+data/app.db
+
+# Allow Essential Production Model Files and Reference Labels
+!models/*.pkl
+!data/bmtpc_failure_labels.csv

@@ -1,346 +1,635 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>Risk & Feasibility Visualization</title>
-    <!-- Include Chart.js -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Risk & Feasibility Simulation · TERRA-SITE AI</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #f0f4f8;
+        :root {
+            --bg-base: #080C15;
+            --bg-card: rgba(15, 23, 42, 0.85);
+            --border-card: rgba(30, 41, 59, 0.8);
+            --border-glow: rgba(16, 185, 129, 0.25);
+            --accent-green: #10B981;
+            --accent-cyan: #06B6D4;
+            --accent-amber: #F59E0B;
+            --accent-rose: #EF4444;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
-            color: #333;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-base);
+            background-image: 
+                radial-gradient(1000px 600px at 5% 0%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+                radial-gradient(800px 500px at 95% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 55%),
+                radial-gradient(900px 600px at 50% 90%, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: var(--text-main);
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
         .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            padding: 30px;
-            margin-bottom: 20px;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 25px rgba(6, 182, 212, 0.08);
+            padding: 32px;
+            margin-bottom: 24px;
         }
 
         .header {
             text-align: center;
-            border-bottom: 2px solid #edf2f7;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 22px;
+            margin-bottom: 28px;
+        }
+
+        .badge-enterprise {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            border-radius: 9999px;
+            padding: 4px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         .header h2 {
-            margin: 0;
-            color: #1a365d;
-            font-size: 28px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .header p {
-            color: #718096;
-            margin-top: 8px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-size: 13.5px;
+        }
+
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 14px;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+            padding: 7px 16px;
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 8px;
+        }
+
+        .nav-back:hover {
+            background: rgba(6, 182, 212, 0.25);
+            color: #fff;
+            transform: translateX(-2px);
         }
 
         .score-banner {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.06) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 24px;
             text-align: center;
         }
 
+        .score-banner h4 {
+            font-size: 11.5px;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
         .score-banner h1 {
-            font-size: 48px;
-            margin: 0;
-            color: #2b6cb0;
+            font-family: 'Outfit', sans-serif;
+            font-size: 52px;
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, #10B981, #06B6D4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 4px 0;
         }
 
         .badges {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
-            margin-bottom: 30px;
+            margin-bottom: 26px;
             flex-wrap: wrap;
         }
 
         .badge {
-            padding: 10px 20px;
-            border-radius: 99px;
+            padding: 9px 16px;
+            border-radius: 10px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+        }
+
+        .badge.HIGH, .badge.WEAK {
+            background: rgba(239, 68, 68, 0.15);
+            color: #F87171;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .badge.MEDIUM {
+            background: rgba(245, 158, 11, 0.15);
+            color: #FBBF24;
+            border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        .badge.LOW, .badge.STRONG {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34D399;
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.15fr;
+            gap: 24px;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #E2E8F0;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .HIGH {
-            background: #fed7d7;
-            color: #c53030;
-        }
-
-        .MEDIUM {
-            background: #feebc8;
-            color: #c05621;
-        }
-
-        .LOW,
-        .STRONG {
-            background: #c6f6d5;
-            color: #2f855a;
-        }
-
-        .WEAK {
-            background: #fed7d7;
-            color: #c53030;
-        }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 350px;
-            width: 100%;
+        .section-title::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: var(--accent-cyan);
+            border-radius: 2px;
         }
 
         .info-panel {
-            background: #f8fafc;
-            border-radius: 12px;
+            background: rgba(2, 6, 23, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
             padding: 20px;
         }
 
         .info-row {
             display: flex;
             justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 13px;
         }
 
         .info-row:last-child {
             border-bottom: none;
         }
 
+        .info-row span {
+            color: var(--text-muted);
+        }
+
         .info-row strong {
-            color: #4a5568;
+            color: #F1F5F9;
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .disclaimer {
-            text-align: center;
-            margin-top: 40px;
-            font-size: 13px;
-            color: #a0aec0;
+        /* ── INTERACTIVE 3D STRUCTURAL SIMULATION BOX ── */
+        .simulation-card {
+            background: rgba(2, 6, 23, 0.6);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
 
-        /* Interactive Abstract Graphic */
         .site-graphic {
-            background: linear-gradient(to bottom, #ebf8ff, #bee3f8);
-            height: 200px;
-            border-radius: 12px;
+            background: linear-gradient(180deg, #0A192F 0%, #030712 100%);
+            height: 220px;
+            border-radius: 14px;
             position: relative;
             overflow: hidden;
-            border: 2px solid #cbd5e0;
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        .graphic-sky {
+            position: absolute;
+            top: 10px;
+            left: 14px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #64748B;
+            display: flex;
+            gap: 12px;
         }
 
         .graphic-ground {
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 40%;
-            background: #d6bc98;
-            border-top: 4px solid #b79469;
+            height: 42%;
+            background: linear-gradient(180deg, #334155 0%, #1E293B 100%);
+            border-top: 3px solid var(--accent-green);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .graphic-strata-label {
+            position: absolute;
+            bottom: 6px;
+            right: 12px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #94A3B8;
         }
 
         .graphic-building {
             position: absolute;
-            bottom: 40%;
+            bottom: 42%;
             left: 50%;
             transform: translateX(-50%);
-            width: 80px;
+            width: 90px;
             height: 100px;
-            background: #e2e8f0;
-            border: 2px solid #a0aec0;
-            border-bottom: none;
+            background: rgba(30, 41, 59, 0.95);
+            border: 2px solid var(--accent-cyan);
+            border-bottom: 3px solid #64748B;
             display: flex;
             flex-wrap: wrap;
-            padding: 5px;
-            gap: 5px;
+            padding: 8px;
+            gap: 6px;
             align-content: flex-start;
+            border-radius: 6px 6px 0 0;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .window {
-            width: 12px;
-            height: 12px;
-            background: #90cdf4;
-            border: 1px solid #63b3ed;
+            width: 13px;
+            height: 13px;
+            background: rgba(6, 182, 212, 0.4);
+            border: 1px solid rgba(6, 182, 212, 0.8);
+            border-radius: 2px;
+            box-shadow: 0 0 6px rgba(6, 182, 212, 0.5);
         }
 
         .water-overlay {
             position: absolute;
             bottom: 0;
             width: 100%;
-            background: rgba(49, 130, 206, 0.6);
-            height: 0;
-            /* Changed based on flood risk */
-            transition: height 1s;
+            background: linear-gradient(180deg, rgba(6, 182, 212, 0.45) 0%, rgba(14, 116, 144, 0.8) 100%);
+            height: 0%;
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+            border-top: 2px solid #38BDF8;
+            backdrop-filter: blur(2px);
+        }
+
+        .water-level-label {
+            position: absolute;
+            top: 4px;
+            left: 10px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #E0F2FE;
+            font-weight: 700;
         }
 
         .quake-cracks {
             position: absolute;
-            bottom: 20%;
-            left: 30%;
-            width: 40px;
+            bottom: 12%;
+            left: 20%;
+            width: 70px;
             height: 60px;
             opacity: 0;
-            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.5) 10px, rgba(0, 0, 0, 0.5) 12px);
+            background: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(239, 68, 68, 0.8) 6px, rgba(239, 68, 68, 0.8) 8px);
+            transition: opacity 0.6s ease;
         }
 
-        @media (max-width: 768px) {
+        .sim-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sim-btn {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border-card);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sim-btn:hover {
+            border-color: var(--neon-cyan);
+            color: #FFFFFF;
+            background: rgba(6, 182, 212, 0.15);
+        }
+
+        .sim-btn.active {
+            background: rgba(6, 182, 212, 0.25);
+            border-color: var(--neon-cyan);
+            color: #FFFFFF;
+        }
+
+        /* Plain-English Hazard Quotient Grid */
+        .plain-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-top: 24px;
+        }
+
+        .plain-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .plain-card h4 {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .plain-card p {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #E2E8F0;
+        }
+
+        @media (max-width: 850px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
-
 <body>
 
     <div class="container">
         <div class="card">
             <div class="header">
-                <h2>Site Feasibility Report</h2>
-                <p>AI-Generated Architectural & Environmental Analysis</p>
-                <a href="/" style="display:inline-block; margin-top:10px; color:#3182ce; text-decoration:none;">&larr;
-                    Back to Selection</a>
+                <div class="badge-enterprise">
+                    <span style="display:inline-block; width:6px; height:6px; background:#06B6D4; border-radius:50%; box-shadow:0 0 6px #06B6D4;"></span>
+                    3D Simulation & Visual Intelligence Engine
+                </div>
+                <h2>Site Feasibility & Physical Risk Simulation</h2>
+                <p>Visualizing Environmental Hazards, Structural Reaction, and Foundation Tolerances</p>
+                <a href="/" class="nav-back">&larr; Return to Central Map Command</a>
             </div>
 
             {% if error %}
-            <div style="background: #fed7d7; color: #c53030; padding:15px; border-radius:8px; text-align:center;">
-                <strong>Error:</strong> {{ error }}
+            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #FCA5A5; padding:20px; border-radius:12px; text-align:center;">
+                <h4 style="font-size: 16px; margin-bottom: 6px;">Simulation Notice</h4>
+                <p style="font-size: 13px;">{{ error }}</p>
+                <a href="/" class="nav-back" style="margin-top: 14px;">Launch Central Map</a>
             </div>
             {% elif result %}
             <div class="score-banner">
                 <div>
-                    <h4 style="margin:0 0 5px 0; color:#718096; text-transform:uppercase; letter-spacing:1px;">Overall
-                        Feasibility Score</h4>
+                    <h4>Overall Feasibility Score</h4>
                     <h1>{{ result.feasibility_score }}%</h1>
-                    <p style="margin:5px 0 0 0; color:#4a5568; font-weight:bold;">{{ result.risk_level }}</p>
+                    <div style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: {% if result.risk_level == 'LOW' or result.risk_level == 'Low Risk' %}#10B981{% elif result.risk_level == 'MEDIUM' or result.risk_level == 'Medium Risk' %}#F59E0B{% else %}#EF4444{% endif %};">
+                        Risk Classification: {{ result.risk_level }}
+                    </div>
                 </div>
             </div>
 
             <div class="badges">
                 <div class="badge {{ result.flood_risk }}">
-                    <span style="font-size:18px;">🌊</span> Flood: {{ result.flood_risk }}
+                    <span>🌊</span> Flood Risk: {{ result.flood_risk }}
                 </div>
                 <div class="badge {{ result.seismic_risk }}">
-                    <span style="font-size:18px;">⚡</span> Seismic: {{ result.seismic_risk }}
+                    <span>⚡</span> Seismic Risk: {{ result.seismic_risk }}
                 </div>
                 <div class="badge {{ result.soil_strength }}">
-                    <span style="font-size:18px;">🪨</span> Soil: {{ result.soil_strength }}
+                    <span>🪨</span> Soil Strata: {{ result.soil_strength }}
                 </div>
                 <div class="badge {{ result.animal_conflict }}">
-                    <span style="font-size:18px;">🐾</span> Wildlife: {{ result.animal_conflict }}
+                    <span>🐾</span> Eco Corridor: {{ result.animal_conflict }}
                 </div>
             </div>
 
             <div class="dashboard-grid">
-                <!-- Data Visualization: Radar Chart -->
-                <div>
-                    <h3 style="text-align:center; color:#2d3748;">Risk Domain Analysis</h3>
-                    <div class="chart-container">
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Info Panel, CSS Graphic, and Pre-Rendered AI Image -->
+                <!-- Column 1: Pre-Rendered AI Scenario & Radar Chart -->
                 <div style="display: flex; flex-direction: column; gap: 20px;">
-                    <!-- New AI Image Section -->
-                    <div class="info-panel"
-                        style="padding: 0; overflow: hidden; background: #fff; border: 1px solid #e2e8f0;">
-                        <div
-                            style="background: #2b6cb0; color: white; padding: 10px 15px; font-weight: bold; font-size: 14px;">
-                            AI Scenario Visualization
+                    <!-- AI Scenario Image Card -->
+                    <div class="info-panel" style="padding: 0; overflow: hidden; border-color: rgba(6, 182, 212, 0.35);">
+                        <div style="background: rgba(6, 182, 212, 0.15); color: #38BDF8; padding: 12px 16px; font-weight: 700; font-size: 13px; border-bottom: 1px solid rgba(6, 182, 212, 0.25); display: flex; justify-content: space-between; align-items: center;">
+                            <span>AI Physical Scenario Model</span>
+                            <span style="font-size: 11px; font-weight: 500; color: #94A3B8;">Pre-Rendered GIS View</span>
                         </div>
                         {% if image_path %}
                         <img src="{{ image_path }}" alt="Pre-rendered Scenario"
-                            style="width: 100%; height: auto; object-fit: cover; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; display: block;">
+                            style="width: 100%; height: 180px; object-fit: cover; display: block;">
+                        <div style="padding: 12px 16px; background: rgba(15, 23, 42, 0.7); font-size: 12px; color: var(--text-muted);">
+                            <strong style="color: #F8FAFC;">Scenario:</strong> {{ result.scenario_title }}
+                        </div>
                         {% else %}
-                        <div style="padding: 40px; text-align: center; color: #a0aec0; background: #f8fafc;">
+                        <div style="padding: 40px; text-align: center; color: #64748B; font-size: 13px;">
                             No scenario image available.
                         </div>
                         {% endif %}
                     </div>
 
+                    <!-- Radar Chart -->
                     <div class="info-panel">
-                        <h3 style="margin-top:0; color:#2d3748;">Site Metrics</h3>
+                        <div class="section-title">Multi-Domain Risk Radar</div>
+                        <div style="height: 240px; position: relative;">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Interactive Structural Simulation & Metrics -->
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Interactive 3D Structural Reaction Simulation -->
+                    <div class="simulation-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="section-title" style="margin-bottom: 0;">Structural Physical Simulation</div>
+                            <span style="font-size: 11px; color: var(--neon-cyan); font-family: 'JetBrains Mono', monospace;" id="simStatus">Live Reaction Mode</span>
+                        </div>
+                        
+                        <div class="site-graphic" id="siteGraphic">
+                            <div class="graphic-sky">
+                                <span>ATMOSPHERE: STABLE</span>
+                                <span id="telemetryWind">WIND: 14 km/h</span>
+                            </div>
+                            <div class="graphic-ground" id="ground"></div>
+                            <div class="graphic-strata-label" id="strataLabel">BEARING: FIRM STRATA</div>
+                            <div class="quake-cracks" id="cracks"></div>
+                            <div class="graphic-building" id="building">
+                                <div class="window"></div><div class="window"></div><div class="window"></div>
+                                <div class="window"></div><div class="window"></div><div class="window"></div>
+                            </div>
+                            <div class="water-overlay" id="water">
+                                <span class="water-level-label" id="waterLevel">FLOOD LEVEL: 0.0m</span>
+                            </div>
+                        </div>
+
+                        <!-- Manual Simulator Buttons for Judges & Demos -->
+                        <div class="sim-controls">
+                            <span style="font-size: 11.5px; color: var(--text-muted); align-self: center;">Test Stress:</span>
+                            <button class="sim-btn" onclick="triggerFloodSim()">🌊 Flood</button>
+                            <button class="sim-btn" onclick="triggerQuakeSim()">⚡ Earthquake</button>
+                            <button class="sim-btn" onclick="triggerSoilSim()">🪨 Soft Soil</button>
+                            <button class="sim-btn" onclick="resetSim()">🔄 Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Panel -->
+                    <div class="info-panel">
+                        <div class="section-title">Engineering Feasibility Metrics</div>
                         <div class="info-row">
                             <span>Predicted Lifespan</span>
-                            <strong>{{ result.lifespan }}</strong>
+                            <strong style="color: #10B981;">{{ result.lifespan }}</strong>
                         </div>
                         <div class="info-row">
-                            <span>Confidence</span>
+                            <span>Model Confidence</span>
                             <strong>{{ result.confidence }}%</strong>
                         </div>
                         <div class="info-row">
                             <span>Recommended Foundation</span>
-                            <strong style="text-align:right;">{{ result.foundation }}</strong>
+                            <strong style="text-align:right; color: #38BDF8;">{{ result.foundation }}</strong>
                         </div>
                         <div class="info-row">
-                            <span>Summary</span>
-                            <strong style="text-align:right; font-size: 14px;">{{ result.risk_factor_summary }}</strong>
+                            <span>Risk Factor Summary</span>
+                            <strong style="text-align:right; font-size: 12px; max-width: 65%;">{{ result.risk_factor_summary }}</strong>
                         </div>
-                    </div>
-
-                    <!-- CSS Abstract Site Graphic -->
-                    <h3 style="text-align:center; color:#2d3748;">Site Simulation Abstraction</h3>
-                    <div class="site-graphic" id="siteGraphic">
-                        <div class="graphic-ground" id="ground"></div>
-                        <div class="quake-cracks" id="cracks"></div>
-                        <div class="graphic-building" id="building">
-                            <div class="window"></div>
-                            <div class="window"></div>
-                            <div class="window"></div>
-                            <div class="window"></div>
-                            <div class="window"></div>
-                            <div class="window"></div>
-                        </div>
-                        <div class="water-overlay" id="water"></div>
                     </div>
                 </div>
             </div>
 
+            <!-- Plain-English Stakeholder Understanding Cards -->
+            <div class="plain-cards-grid">
+                <div class="plain-card">
+                    <h4>🌊 Flood Tolerance</h4>
+                    <p>
+                        {% if result.flood_risk == 'HIGH' %}
+                        High seasonal flood and waterlogging potential. Plinth elevation must be raised by at least +1.2m with perimeter storm trenches.
+                        {% elif result.flood_risk == 'MEDIUM' %}
+                        Moderate rainfall runoff exposure. Ensure localized slope grading and standard box drain outlets.
+                        {% else %}
+                        Naturally elevated site. Minimal flood or monsoon ponding risk.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="plain-card">
+                    <h4>⚡ Seismic Resilience</h4>
+                    <p>
+                        {% if result.seismic_risk == 'HIGH' or 'ZONE V' in result.seismic_risk or 'ZONE IV' in result.seismic_risk %}
+                        Zone IV/V active seismic fault proximity. Mandates IS 1893 ductile detailing and reinforced shear cores.
+                        {% else %}
+                        Standard seismic zone. Conventional RCC frame design with standard column ties is sufficient.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="plain-card">
+                    <h4>🪨 Foundation & Soil</h4>
+                    <p>
+                        {% if result.soil_strength == 'WEAK' %}
+                        Low bearing capacity (< 100 kPa). Potential differential settlement requires Raft or Deep Friction Pile foundations.
+                        {% else %}
+                        Firm stratum (> 150 kPa). Ideal for economical Isolated Pad footings or Strip foundations.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="plain-card">
+                    <h4>🐾 Environmental Clearance</h4>
+                    <p>
+                        {% if result.animal_conflict == 'HIGH' %}
+                        Site lies within MoEFCC eco-sensitive buffer zone. Special wildlife clearance and noise barriers required.
+                        {% else %}
+                        Unrestricted development zone. Clear of protected national parks and forest wildlife reserves.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
             <script>
-                // Safely load scores passed from python (using raw inputs for risks)
+                // Safely load scores passed from python
                 const resultScores = {{ result.domain_scores | tojson | safe if result and result.domain_scores else "{}" }};
                 const soilScore = resultScores.soil || 50;
                 const climateScore = resultScores.climate || 50;
                 const envScore = resultScores.environment || 50;
                 const animalScore = {{ result.domain_scores.animal | default (50) }};
 
-                // --- 1. Render Radar Chart ---
+                // --- 1. Render Dark Theme Radar Chart ---
                 const ctx = document.getElementById('radarChart').getContext('2d');
                 new Chart(ctx, {
                     type: 'radar',
                     data: {
-                        labels: ['Soil Quality', 'Climate Safety', 'Environmental Stability', 'Wildlife Safety'],
+                        labels: ['Soil Bearing', 'Climate Safety', 'Seismic Stability', 'Eco Buffer'],
                         datasets: [{
-                            label: 'Domain Safety Score (Higher is Better)',
+                            label: 'Safety Quotient (0-100)',
                             data: [soilScore, climateScore, envScore, animalScore],
-                            backgroundColor: 'rgba(66, 153, 225, 0.2)',
-                            borderColor: 'rgba(66, 153, 225, 1)',
-                            pointBackgroundColor: 'rgba(49, 130, 206, 1)',
-                            pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: 'rgba(49, 130, 206, 1)',
-                            borderWidth: 2
+                            backgroundColor: 'rgba(6, 182, 212, 0.25)',
+                            borderColor: '#06B6D4',
+                            pointBackgroundColor: '#10B981',
+                            pointBorderColor: '#FFFFFF',
+                            pointHoverBackgroundColor: '#FFFFFF',
+                            pointHoverBorderColor: '#06B6D4',
+                            borderWidth: 2,
+                            pointRadius: 4
                         }]
                     },
                     options: {
@@ -348,66 +637,110 @@
                         maintainAspectRatio: false,
                         scales: {
                             r: {
-                                angleLines: { color: 'rgba(0,0,0,0.1)' },
-                                grid: { color: 'rgba(0,0,0,0.1)' },
+                                angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                                grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                                pointLabels: { color: '#CBD5E1', font: { size: 11, family: 'Inter' } },
                                 suggestedMin: 0,
                                 suggestedMax: 100,
-                                ticks: { stepSize: 20 }
+                                ticks: { stepSize: 20, color: '#64748B', backdropColor: 'transparent' }
                             }
                         },
                         plugins: {
-                            legend: { position: 'bottom' }
+                            legend: { position: 'bottom', labels: { color: '#94A3B8', font: { family: 'Inter', size: 11 } } }
                         }
                     }
                 });
 
-                // --- 2. Animate CSS Graphic based on risks ---
-                setTimeout(() => {
-                    const floodRisk = "{{ result.flood_risk }}";
-                    const seismicRisk = "{{ result.seismic_risk }}";
-                    const soilStrength = "{{ result.soil_strength }}";
+                // --- 2. Animate Simulation on Load based on Real Analyzed Hazards ---
+                function applyAnalyzedHazards() {
+                    const floodRisk = "{{ result.flood_risk }}".toUpperCase();
+                    const seismicRisk = "{{ result.seismic_risk }}".toUpperCase();
+                    const soilStrength = "{{ result.soil_strength }}".toUpperCase();
 
                     // Flood Animation
-                    if (floodRisk === "HIGH") {
-                        document.getElementById('water').style.height = '45%';
-                    } else if (floodRisk === "MEDIUM") {
+                    if (floodRisk.includes("HIGH")) {
+                        document.getElementById('water').style.height = '46%';
+                        document.getElementById('waterLevel').textContent = 'FLOOD INUNDATION: +1.8m';
+                    } else if (floodRisk.includes("MEDIUM")) {
                         document.getElementById('water').style.height = '20%';
+                        document.getElementById('waterLevel').textContent = 'SURFACE RUNOFF: +0.6m';
                     } else {
                         document.getElementById('water').style.height = '0%';
                     }
 
                     // Seismic Animation
-                    if (seismicRisk === "HIGH") {
+                    if (seismicRisk.includes("HIGH") || seismicRisk.includes("ZONE V") || seismicRisk.includes("ZONE IV")) {
                         const building = document.getElementById('building');
-                        building.style.transform = 'translateX(-50%) rotate(3deg)';
+                        building.style.transform = 'translateX(-50%) rotate(4deg)';
                         document.getElementById('cracks').style.opacity = '1';
+                    } else {
+                        document.getElementById('building').style.transform = 'translateX(-50%) rotate(0deg)';
+                        document.getElementById('cracks').style.opacity = '0';
                     }
 
                     // Soil Animation
-                    if (soilStrength === "WEAK") {
-                        document.getElementById('ground').style.borderRadius = "50% 50% 0 0";
+                    if (soilStrength.includes("WEAK")) {
+                        document.getElementById('ground').style.borderRadius = "40% 40% 0 0";
+                        document.getElementById('ground').style.borderTopColor = "#EF4444";
                         document.getElementById('building').style.bottom = "36%";
+                        document.getElementById('strataLabel').textContent = "BEARING: SOFT SETTLING SOIL";
+                        document.getElementById('strataLabel').style.color = "#F87171";
+                    } else {
+                        document.getElementById('ground').style.borderRadius = "0";
+                        document.getElementById('ground').style.borderTopColor = "#10B981";
+                        document.getElementById('building').style.bottom = "42%";
+                        document.getElementById('strataLabel').textContent = "BEARING: FIRM ROCK STRATA";
+                        document.getElementById('strataLabel').style.color = "#34D399";
                     }
-                }, 500);
+                }
+
+                setTimeout(applyAnalyzedHazards, 400);
+
+                // --- 3. Interactive Stress Test Triggers ---
+                function triggerFloodSim() {
+                    document.getElementById('water').style.height = '52%';
+                    document.getElementById('waterLevel').textContent = 'SIMULATED FLOOD: +2.4m INUNDATION';
+                    document.getElementById('simStatus').textContent = 'Simulating 100-Year Flood Event';
+                }
+
+                function triggerQuakeSim() {
+                    const building = document.getElementById('building');
+                    building.style.transform = 'translateX(-50%) rotate(-6deg)';
+                    document.getElementById('cracks').style.opacity = '1';
+                    document.getElementById('simStatus').textContent = 'Simulating 6.5 Magnitude Seismic Shock';
+                    setTimeout(() => { building.style.transform = 'translateX(-50%) rotate(5deg)'; }, 300);
+                    setTimeout(() => { building.style.transform = 'translateX(-50%) rotate(-3deg)'; }, 600);
+                    setTimeout(() => { building.style.transform = 'translateX(-50%) rotate(2deg)'; }, 900);
+                }
+
+                function triggerSoilSim() {
+                    document.getElementById('ground').style.borderRadius = "50% 50% 0 0";
+                    document.getElementById('ground').style.borderTopColor = "#EF4444";
+                    document.getElementById('building').style.bottom = "32%";
+                    document.getElementById('strataLabel').textContent = "SIMULATED DIFFERENTIAL SETTLEMENT";
+                    document.getElementById('strataLabel').style.color = "#EF4444";
+                    document.getElementById('simStatus').textContent = 'Simulating Soft Ground Collapse';
+                }
+
+                function resetSim() {
+                    applyAnalyzedHazards();
+                    document.getElementById('simStatus').textContent = 'Live Analyzed Telemetry';
+                }
             </script>
 
             {% else %}
             <div style="text-align: center; padding: 50px;">
-                <p>No analysis results available. Please run an analysis first.</p>
-                <a href="/"
-                    style="display:inline-block; margin-top:10px; padding: 10px 20px; background:#3182ce; color:white; border-radius:8px; text-decoration:none;">Go
-                    back to Map</a>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">No active analysis found. Please execute an intelligence query on the map first.</p>
+                <a href="/" class="nav-back">Launch Central Map</a>
             </div>
             {% endif %}
 
-            <div class="disclaimer">
-                This visualization dashboard highlights safety quotients and risks mathematically derived from
-                environmental data.<br>
-                It should be used as a supplementary tool for professional civil engineers.
+            <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #64748B;">
+                <strong>TERRA-SITE AI™ Structural Reaction & Hazard Simulation Engine</strong><br>
+                Empowering civil engineers & non-technical decision makers with visual geotechnical clarity.
             </div>
         </div>
     </div>
 
 </body>
-
 </html>

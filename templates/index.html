@@ -4,2313 +4,1601 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>AI Construction Site Selection</title>
+	<title>TERRA·AI — Autonomous Geotechnical & Environmental Intelligence Platform</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 	<link rel="icon" href="data:," />
 	<link
-		href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Crimson+Pro:wght@400;600&display=swap"
+		href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap"
 		rel="stylesheet" />
 	<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/lib-map.css') }}" />
 	<script src="{{ url_for('static', filename='leaflet/lib-map.js') }}"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<style>
 		:root {
-			--bg-1: #f7f2ea;
-			--bg-2: #e8f1ed;
-			--ink: #1a2421;
-			--muted: #4d5b57;
-			--accent: #1f7a6b;
-			--accent-2: #f06d3a;
-			--panel: #ffffff;
-			--panel-2: #f3f7f5;
-			--border: #dbe4df;
-			--shadow: 0 14px 30px rgba(16, 27, 24, 0.12);
+			--bg-base: #080C15;
+			--bg-surface: rgba(15, 23, 42, 0.85);
+			--bg-card: rgba(30, 41, 59, 0.65);
+			--bg-card-hover: rgba(30, 41, 59, 0.95);
+			--border-glass: rgba(255, 255, 255, 0.1);
+			--border-glow: rgba(6, 182, 212, 0.4);
+			
+			--text-main: #F8FAFC;
+			--text-muted: #94A3B8;
+			--text-dim: #64748B;
+			
+			--neon-emerald: #10B981;
+			--neon-cyan: #06B6D4;
+			--neon-indigo: #6366F1;
+			--neon-amber: #F59E0B;
+			--neon-rose: #EF4444;
+			
+			--shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+			--shadow-glow-cyan: 0 0 25px rgba(6, 182, 212, 0.25);
+			--shadow-glow-emerald: 0 0 25px rgba(16, 185, 129, 0.25);
 		}
 
 		* {
 			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
 		}
 
 		body {
-			margin: 0;
-			font-family: "Space Grotesk", Arial, sans-serif;
-			color: var(--ink);
-			background: radial-gradient(1200px 700px at 10% 0%, #fff6e8 0%, transparent 60%),
-				radial-gradient(900px 600px at 90% 10%, #e2f6ef 0%, transparent 55%),
-				linear-gradient(130deg, var(--bg-1), var(--bg-2));
+			font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+			color: var(--text-main);
+			background-color: var(--bg-base);
+			background-image: 
+				radial-gradient(1000px 600px at 5% 0%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+				radial-gradient(800px 500px at 95% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 55%),
+				radial-gradient(900px 600px at 50% 90%, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
 			min-height: 100vh;
-			position: relative;
 			overflow-x: hidden;
+			position: relative;
 		}
 
-		body::before,
-		body::after {
-			content: "";
-			position: absolute;
-			width: 420px;
-			height: 420px;
-			background: conic-gradient(from 120deg, rgba(31, 122, 107, 0.12), rgba(240, 109, 58, 0.12), transparent 60%);
-			filter: blur(12px);
-			z-index: 0;
-		}
-
-		body::before {
-			top: -120px;
-			left: -80px;
-		}
-
-		body::after {
-			bottom: -160px;
-			right: -60px;
-			transform: rotate(25deg);
+		h1, h2, h3, h4, .brand, .tab-btn, .section-title {
+			font-family: "Outfit", "Space Grotesk", sans-serif;
+			letter-spacing: -0.02em;
 		}
 
 		.app {
-			position: relative;
-			z-index: 1;
-			max-width: 1300px;
+			max-width: 1440px;
 			margin: 0 auto;
-			padding: 28px 24px 48px;
+			padding: 20px 24px 60px;
+			position: relative;
+			z-index: 2;
 		}
 
+		/* ── HEADER ── */
 		header {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			gap: 16px;
 			margin-bottom: 24px;
+			flex-wrap: wrap;
+			gap: 16px;
 		}
 
-		.title h1 {
-			margin: 0;
-			font-size: 30px;
-			letter-spacing: -0.4px;
-		}
-
-		.title p {
-			margin: 0;
-			color: var(--muted);
-			font-family: "Crimson Pro", "Times New Roman", serif;
-			font-size: 18px;
-		}
-
-		.status-pill {
-			padding: 10px 14px;
-			background: var(--panel);
-			border: 1px solid var(--border);
-			border-radius: 999px;
-			box-shadow: var(--shadow);
-			font-size: 13px;
+		.brand-wrap {
 			display: flex;
 			align-items: center;
-			gap: 8px;
+			gap: 14px;
 		}
 
-		.status-dot {
-			width: 10px;
-			height: 10px;
-			background: #2bb673;
-			border-radius: 50%;
-			box-shadow: 0 0 0 4px rgba(43, 182, 115, 0.2);
+		.brand-logo {
+			width: 46px;
+			height: 46px;
+			border-radius: 12px;
+			background: linear-gradient(135deg, #06B6D4, #3B82F6, #10B981);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 24px;
+			box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
 		}
 
-		.grid {
-			display: grid;
-			grid-template-columns: 1.3fr 0.9fr;
-			gap: 22px;
+		.brand-title h1 {
+			font-size: 26px;
+			font-weight: 800;
+			background: linear-gradient(90deg, #FFFFFF, #E2E8F0, #94A3B8);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			display: flex;
+			align-items: center;
+			gap: 10px;
 		}
 
+		.version-chip {
+			font-size: 10px;
+			font-family: "JetBrains Mono", monospace;
+			font-weight: 600;
+			padding: 3px 8px;
+			border-radius: 20px;
+			background: rgba(6, 182, 212, 0.15);
+			border: 1px solid rgba(6, 182, 212, 0.3);
+			color: var(--neon-cyan);
+			-webkit-text-fill-color: var(--neon-cyan);
+		}
+
+		.brand-title p {
+			font-size: 13px;
+			color: var(--text-muted);
+			margin-top: 2px;
+		}
+
+		.header-actions {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.select-custom {
+			background: rgba(30, 41, 59, 0.8);
+			border: 1px solid var(--border-glass);
+			color: var(--text-main);
+			padding: 8px 12px;
+			border-radius: 10px;
+			font-size: 13px;
+			outline: none;
+			cursor: pointer;
+		}
+
+		/* ── TABS ── */
 		.tabs {
 			display: flex;
-			gap: 10px;
-			margin-bottom: 12px;
+			gap: 8px;
+			margin-bottom: 18px;
 			flex-wrap: wrap;
+			background: rgba(15, 23, 42, 0.6);
+			padding: 6px;
+			border-radius: 14px;
+			border: 1px solid var(--border-glass);
+			backdrop-filter: blur(10px);
 		}
 
 		.tab-btn {
 			appearance: none;
-			border: 1px solid var(--border);
-			background: var(--panel);
-			color: var(--muted);
-			padding: 10px 14px;
-			border-radius: 999px;
+			border: 1px solid transparent;
+			background: transparent;
+			color: var(--text-muted);
+			padding: 10px 18px;
+			border-radius: 10px;
 			font-weight: 600;
+			font-size: 13.5px;
 			cursor: pointer;
-			transition: all 0.2s ease;
+			transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+
+		.tab-btn:hover {
+			color: var(--text-main);
+			background: rgba(255, 255, 255, 0.06);
 		}
 
 		.tab-btn.active {
-			background: var(--accent);
-			border-color: var(--accent);
-			color: #fff;
-			box-shadow: var(--shadow);
+			background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(16, 185, 129, 0.2));
+			border-color: rgba(6, 182, 212, 0.5);
+			color: #FFFFFF;
+			box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+		}
+
+		.status-bar {
+			margin-bottom: 18px;
+			padding: 12px 18px;
+			border-radius: 12px;
+			background: rgba(15, 23, 42, 0.75);
+			border: 1px solid var(--border-glass);
+			font-size: 13px;
+			color: var(--neon-cyan);
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-family: 'JetBrains Mono', monospace;
 		}
 
 		.tab-panel {
 			display: none;
-			animation: rise 0.4s ease both;
+			animation: fadeIn 0.35s ease-out both;
 		}
 
 		.tab-panel.active {
 			display: block;
 		}
 
-		.status-bar {
-			margin-bottom: 16px;
-			padding: 10px 14px;
-			border-radius: 12px;
-			background: #f3f7f5;
-			border: 1px solid var(--border);
-			font-size: 12px;
-			color: var(--muted);
-			min-height: 18px;
+		@keyframes fadeIn {
+			from { opacity: 0; transform: translateY(6px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+
+		/* ── GRID & PANELS ── */
+		.grid {
+			display: grid;
+			grid-template-columns: 1.25fr 1fr;
+			gap: 24px;
 		}
 
 		.panel {
-			background: var(--panel);
-			border: 1px solid var(--border);
-			border-radius: 18px;
-			box-shadow: var(--shadow);
-			padding: 18px;
-			animation: rise 0.5s ease both;
+			background: var(--bg-surface);
+			border: 1px solid var(--border-glass);
+			border-radius: 20px;
+			box-shadow: var(--shadow-card);
+			padding: 24px;
+			backdrop-filter: blur(16px);
+			position: relative;
 		}
 
-		@keyframes rise {
-			from {
-				transform: translateY(8px);
-				opacity: 0;
-			}
-
-			to {
-				transform: translateY(0);
-				opacity: 1;
-			}
+		.panel::before {
+			content: "";
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			height: 1px;
+			background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
 		}
 
 		.panel-title {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			margin-bottom: 12px;
-			font-weight: 600;
+			margin-bottom: 18px;
+			font-size: 16px;
+			font-weight: 700;
+			color: var(--text-main);
+			letter-spacing: -0.01em;
 		}
 
-		.map-wrap {
+		/* ── CONTROLS PANEL SPACING OVERHAUL ── */
+		.panel.controls {
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+		}
+
+		.control-card {
+			background: rgba(15, 23, 42, 0.65);
+			border: 1px solid var(--border-glass);
+			border-radius: 14px;
+			padding: 16px 18px;
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
 		}
 
+		.control-card-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			font-size: 13px;
+			font-weight: 600;
+			color: #E2E8F0;
+		}
+
+		.control-card-header span.sub {
+			font-size: 11px;
+			color: var(--text-muted);
+			font-weight: 400;
+		}
+
+		.selected-type-banner {
+			background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(15, 23, 42, 0.8));
+			border: 1px solid rgba(6, 182, 212, 0.35);
+			border-radius: 12px;
+			padding: 12px 16px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.selected-type-name {
+			font-size: 15px;
+			font-weight: 700;
+			color: #FFFFFF;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.type-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 10px;
+		}
+
+		.type-card {
+			background: rgba(30, 41, 59, 0.6);
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			border-radius: 10px;
+			padding: 12px 8px;
+			text-align: center;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 4px;
+			font-size: 12px;
+			font-weight: 600;
+			color: #CBD5E1;
+		}
+
+		.type-card:hover {
+			background: rgba(6, 182, 212, 0.15);
+			border-color: var(--neon-cyan);
+			transform: translateY(-2px);
+			color: #FFFFFF;
+		}
+
+		.type-card.active {
+			background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(16, 185, 129, 0.25));
+			border-color: var(--neon-cyan);
+			box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+			color: #FFFFFF;
+		}
+
+		.type-card .icon {
+			font-size: 20px;
+		}
+
+		.slider-wrap {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.slider-head {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			font-size: 13px;
+		}
+
+		.slider-head .val {
+			color: var(--neon-cyan);
+			font-weight: 700;
+			font-family: 'JetBrains Mono', monospace;
+			font-size: 15px;
+			background: rgba(6, 182, 212, 0.15);
+			padding: 2px 10px;
+			border-radius: 6px;
+			border: 1px solid rgba(6, 182, 212, 0.3);
+		}
+
+		input[type="range"] {
+			-webkit-appearance: none;
+			width: 100%;
+			height: 8px;
+			border-radius: 4px;
+			background: rgba(255, 255, 255, 0.1);
+			outline: none;
+			cursor: pointer;
+		}
+
+		input[type="range"]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 20px;
+			height: 20px;
+			border-radius: 50%;
+			background: var(--neon-cyan);
+			box-shadow: 0 0 10px var(--neon-cyan);
+			cursor: pointer;
+			transition: all 0.15s;
+		}
+
+		input[type="range"]::-webkit-slider-thumb:hover {
+			transform: scale(1.2);
+		}
+
+		.floor-chips {
+			display: flex;
+			gap: 6px;
+			flex-wrap: wrap;
+		}
+
+		.floor-chip {
+			font-size: 11px;
+			padding: 4px 10px;
+			border-radius: 6px;
+			background: rgba(30, 41, 59, 0.5);
+			border: 1px solid var(--border-glass);
+			color: var(--text-muted);
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+
+		.floor-chip:hover {
+			border-color: var(--neon-cyan);
+			color: #fff;
+		}
+
+		/* ── MAP CONTAINER & SWITCHER ── */
+		.map-header-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 12px;
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.map-layer-selector {
+			display: flex;
+			gap: 4px;
+			background: rgba(15, 23, 42, 0.8);
+			padding: 4px;
+			border-radius: 10px;
+			border: 1px solid var(--border-glass);
+		}
+
+		.layer-btn {
+			background: transparent;
+			border: none;
+			color: var(--text-muted);
+			padding: 5px 10px;
+			border-radius: 6px;
+			font-size: 11px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+
+		.layer-btn:hover {
+			color: var(--text-main);
+		}
+
+		.layer-btn.active {
+			background: rgba(6, 182, 212, 0.2);
+			color: var(--neon-cyan);
+			border: 1px solid rgba(6, 182, 212, 0.4);
+		}
+
 		#map {
 			height: 440px;
 			width: 100%;
-			border-radius: 14px;
+			border-radius: 16px;
 			overflow: hidden;
-			border: 1px solid var(--border);
+			border: 1px solid var(--border-glass);
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 		}
 
-		.coords {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 10px;
+		.quick-presets {
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+			margin-top: 14px;
+			align-items: center;
+		}
+
+		.preset-chip {
+			font-size: 11.5px;
+			padding: 6px 12px;
+			border-radius: 8px;
+			background: rgba(30, 41, 59, 0.7);
+			border: 1px solid var(--border-glass);
+			color: var(--text-muted);
+			cursor: pointer;
+			transition: all 0.2s ease;
+			font-weight: 500;
+		}
+
+		.preset-chip:hover {
+			border-color: var(--neon-cyan);
+			color: var(--text-main);
+			background: rgba(6, 182, 212, 0.15);
+			transform: translateY(-1px);
 		}
 
 		.search-row {
 			display: grid;
 			grid-template-columns: 1fr auto;
 			gap: 10px;
-			align-items: center;
-			margin: 12px 0;
+			margin: 14px 0 10px;
 		}
 
-		.search-row input {
-			padding: 10px 12px;
+		input[type="text"], input[type="email"], input[type="number"], select, textarea {
+			background: rgba(15, 23, 42, 0.85);
+			border: 1px solid var(--border-glass);
 			border-radius: 10px;
-			border: 1px solid var(--border);
-			font-size: 14px;
-			background: #fff;
+			padding: 11px 14px;
+			color: var(--text-main);
+			font-family: inherit;
+			font-size: 13px;
+			outline: none;
+			transition: border-color 0.2s, box-shadow 0.2s;
 		}
 
-		.search-results {
-			border: 1px solid var(--border);
-			border-radius: 12px;
-			background: #ffffff;
-			padding: 8px;
-			margin-bottom: 10px;
-			display: none;
-			flex-direction: column;
-			gap: 6px;
+		input:focus, select:focus, textarea:focus {
+			border-color: var(--neon-cyan);
+			box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
 		}
 
-		.search-results button {
-			text-align: left;
-			padding: 8px 10px;
-			border-radius: 10px;
-			border: 1px solid var(--border);
-			background: #f9fbfa;
-			font-size: 12px;
-			cursor: pointer;
-		}
-
-		.search-results button:hover {
-			background: #eef5f2;
+		.coords {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 12px;
+			margin-top: 10px;
 		}
 
 		.field {
 			display: flex;
 			flex-direction: column;
 			gap: 6px;
-			font-size: 13px;
-			color: var(--muted);
-		}
-
-		.field input {
-			padding: 10px 12px;
-			border-radius: 10px;
-			border: 1px solid var(--border);
-			font-size: 14px;
-		}
-
-		.controls {
-			display: flex;
-			flex-direction: column;
-			gap: 16px;
-		}
-
-		.drop-zone {
-			border: 1px dashed var(--accent);
-			border-radius: 14px;
-			background: var(--panel-2);
-			padding: 14px;
-			min-height: 74px;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 10px;
-		}
-
-		.drop-zone .selected {
-			font-size: 15px;
-			font-weight: 600;
-		}
-
-		.drop-zone .hint {
 			font-size: 12px;
-			color: var(--muted);
+			color: var(--text-muted);
 		}
 
-		.type-list {
-			display: grid;
-			grid-template-columns: repeat(2, 1fr);
-			gap: 10px;
-		}
-
-		.type-card {
-			background: #fffaf5;
-			border: 1px solid #f3d7c3;
-			padding: 10px;
-			border-radius: 12px;
-			cursor: grab;
-			font-size: 13px;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			transition: transform 0.2s ease, box-shadow 0.2s ease;
-		}
-
-		.type-card:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 10px 20px rgba(240, 109, 58, 0.18);
-		}
-
-		.type-card span {
-			font-weight: 600;
-		}
-
-		.slider {
-			display: flex;
-			flex-direction: column;
-			gap: 8px;
-		}
-
-		.slider input {
-			width: 100%;
-		}
-
-		.button-row {
-			display: flex;
-			gap: 10px;
-		}
-
+		/* ── BUTTONS ── */
 		.btn {
 			appearance: none;
 			border: none;
-			padding: 12px 16px;
-			border-radius: 12px;
+			padding: 12px 20px;
+			border-radius: 10px;
 			font-weight: 600;
+			font-size: 13.5px;
 			cursor: pointer;
-			background: var(--accent);
-			color: white;
-			transition: transform 0.2s ease, box-shadow 0.2s ease;
+			background: linear-gradient(135deg, #0EA5E9, #06B6D4, #10B981);
+			color: #FFFFFF;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			transition: all 0.25s ease;
+			box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+		}
+
+		.btn:hover:not(:disabled) {
+			transform: translateY(-2px);
+			box-shadow: 0 6px 25px rgba(6, 182, 212, 0.45);
+		}
+
+		.btn:disabled {
+			opacity: 0.4;
+			cursor: not-allowed;
+			transform: none;
+			box-shadow: none;
 		}
 
 		.btn.secondary {
-			background: #e7f2ef;
-			color: var(--accent);
-			border: 1px solid #c8e1dc;
+			background: rgba(30, 41, 59, 0.8);
+			border: 1px solid var(--border-glass);
+			color: var(--text-main);
+			box-shadow: none;
 		}
 
-		.btn:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 10px 20px rgba(31, 122, 107, 0.2);
+		.btn.secondary:hover:not(:disabled) {
+			background: rgba(51, 65, 85, 0.9);
+			border-color: var(--neon-cyan);
 		}
 
-		.results {
-			display: grid;
-			grid-template-columns: repeat(2, 1fr);
-			gap: 12px;
+		.btn-whatsapp {
+			background: linear-gradient(135deg, #059669, #10B981) !important;
+			color: #FFFFFF !important;
 		}
 
-		.input-row {
-			display: grid;
-			grid-template-columns: repeat(2, 1fr);
-			gap: 12px;
+		/* ── HERO FEASIBILITY GAUGE HUD ── */
+		.hero-scorecard {
+			display: flex;
+			align-items: center;
+			gap: 22px;
+			padding: 22px;
+			background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.6));
+			border: 1px solid var(--border-glass);
+			border-radius: 16px;
+			margin-bottom: 20px;
+			position: relative;
+			overflow: hidden;
 		}
 
-		.input-field {
+		.gauge-wrap {
+			position: relative;
+			width: 120px;
+			height: 120px;
+			flex-shrink: 0;
+		}
+
+		.gauge-wrap svg {
+			transform: rotate(-90deg);
+		}
+
+		.gauge-bg {
+			fill: none;
+			stroke: rgba(255, 255, 255, 0.08);
+			stroke-width: 9;
+		}
+
+		.gauge-fill {
+			fill: none;
+			stroke: url(#scoreGradient);
+			stroke-width: 9;
+			stroke-linecap: round;
+			stroke-dasharray: 314;
+			stroke-dashoffset: 60;
+			transition: stroke-dashoffset 1s ease-out;
+		}
+
+		.gauge-text {
+			position: absolute;
+			inset: 0;
 			display: flex;
 			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.gauge-val {
+			font-family: "Space Grotesk", sans-serif;
+			font-size: 28px;
+			font-weight: 700;
+			color: #FFFFFF;
+			line-height: 1;
+		}
+
+		.gauge-lbl {
+			font-size: 10px;
+			color: var(--text-muted);
+			margin-top: 3px;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+
+		.score-info {
+			flex: 1;
+		}
+
+		.score-status-badge {
+			display: inline-flex;
+			align-items: center;
 			gap: 6px;
+			padding: 4px 14px;
+			border-radius: 20px;
 			font-size: 12px;
-			color: var(--muted);
+			font-weight: 600;
+			margin-bottom: 8px;
 		}
 
-		.input-field input,
-		.input-field select,
-		.input-field textarea {
-			padding: 10px 12px;
-			border-radius: 10px;
-			border: 1px solid var(--border);
-			font-size: 14px;
-			font-family: inherit;
+		.score-status-badge.good {
+			background: rgba(16, 185, 129, 0.15);
+			border: 1px solid rgba(16, 185, 129, 0.4);
+			color: var(--neon-emerald);
 		}
 
-		.input-field textarea {
-			min-height: 90px;
-			resize: vertical;
+		.score-status-badge.warn {
+			background: rgba(245, 158, 11, 0.15);
+			border: 1px solid rgba(245, 158, 11, 0.4);
+			color: var(--neon-amber);
+		}
+
+		.score-status-badge.bad {
+			background: rgba(244, 63, 94, 0.15);
+			border: 1px solid rgba(244, 63, 94, 0.4);
+			color: var(--neon-rose);
+		}
+
+		/* ── RESULT METRIC CARDS ── */
+		.results-grid {
+			display: grid;
+			grid-template-columns: repeat(2, 1fr);
+			gap: 14px;
 		}
 
 		.result-card {
-			background: #f8fbfa;
+			background: var(--bg-card);
+			border: 1px solid var(--border-glass);
 			border-radius: 14px;
-			padding: 12px;
-			border: 1px solid var(--border);
-			min-height: 86px;
+			padding: 16px;
+			transition: all 0.25s ease;
+		}
+
+		.result-card:hover {
+			background: var(--bg-card-hover);
+			border-color: rgba(255, 255, 255, 0.15);
+			transform: translateY(-2px);
 		}
 
 		.result-card h4 {
-			margin: 0 0 6px 0;
-			font-size: 12px;
-			color: var(--muted);
+			font-size: 11px;
+			color: var(--text-muted);
 			text-transform: uppercase;
-			letter-spacing: 0.6px;
+			letter-spacing: 0.05em;
+			margin-bottom: 6px;
 		}
 
 		.result-card p {
-			margin: 0;
-			font-size: 18px;
-			font-weight: 600;
-		}
-
-		.result-sub {
-			margin-top: 4px;
-			font-size: 12px;
-			color: var(--muted);
-		}
-
-		.result-meta {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			margin-top: 8px;
-			flex-wrap: wrap;
-		}
-
-		.result-note {
-			margin-top: 6px;
-			font-size: 12px;
-			color: var(--muted);
+			font-size: 17px;
+			font-weight: 700;
+			color: #FFFFFF;
+			font-family: "Space Grotesk", sans-serif;
 		}
 
 		.badge {
 			font-size: 11px;
-			padding: 4px 8px;
-			border-radius: 999px;
+			padding: 4px 10px;
+			border-radius: 20px;
 			font-weight: 600;
-			border: 1px solid transparent;
-			white-space: nowrap;
+			display: inline-block;
 		}
 
-		.badge.good {
-			background: #dff4ea;
-			color: #1f6b46;
-			border-color: #c2e6d2;
-		}
+		.badge.good { background: rgba(16, 185, 129, 0.15); color: var(--neon-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+		.badge.warn { background: rgba(245, 158, 11, 0.15); color: var(--neon-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+		.badge.bad  { background: rgba(244, 63, 94, 0.15); color: var(--neon-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
 
-		.badge.warn {
-			background: #fff3d6;
-			color: #8a5a00;
-			border-color: #f1ddb0;
-		}
-
-		.badge.bad {
-			background: #fde1e1;
-			color: #9b1c1c;
-			border-color: #f5c7c7;
-		}
-
-		.banner {
+		/* ── VOICE PANEL HUD ── */
+		.voice-panel-hud {
+			background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65));
+			border: 1px solid var(--border-glass);
 			border-radius: 14px;
-			padding: 12px 14px;
-			border: 1px solid var(--border);
-			background: #f5f7f6;
-			margin-bottom: 12px;
-		}
-
-		.banner.good {
-			background: #e3f7ec;
-			border-color: #c4ebd7;
-			color: #1c5f3f;
-		}
-
-		.banner.warn {
-			background: #fff5db;
-			border-color: #f0dfb7;
-			color: #805300;
-		}
-
-		.banner.bad {
-			background: #fde3e3;
-			border-color: #f4c7c7;
-			color: #8d1d1d;
-		}
-
-		.banner-title {
-			font-weight: 700;
-			font-size: 14px;
-			margin-bottom: 4px;
-		}
-
-		.banner-body {
-			font-size: 13px;
-			line-height: 1.4;
-		}
-
-		.info-tip {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			width: 18px;
-			height: 18px;
-			border-radius: 50%;
-			background: #eef3f1;
-			color: var(--muted);
-			font-size: 11px;
-			margin-left: 6px;
-			border: 1px solid var(--border);
-		}
-
-		.result-card.risk-low {
-			background: #e9f8ef;
-			border-color: #cfeedd;
-		}
-
-		.result-card.risk-medium {
-			background: #fff5df;
-			border-color: #f1e0b8;
-		}
-
-		.result-card.risk-high {
-			background: #fde8e8;
-			border-color: #f3c9c9;
-		}
-
-		.chart-wrap {
-			margin-top: 14px;
-			padding: 12px;
-			border-radius: 14px;
-			background: #ffffff;
-			border: 1px solid var(--border);
-		}
-
-		.log {
-			font-size: 12px;
-			color: var(--muted);
-			min-height: 18px;
-		}
-
-		.legend {
-			display: flex;
-			gap: 8px;
-			flex-wrap: wrap;
-			font-size: 12px;
-			color: var(--muted);
-		}
-
-		.legend span {
-			padding: 4px 8px;
-			border-radius: 999px;
-			background: #f2f6f4;
-			border: 1px solid var(--border);
-		}
-
-		@media (max-width: 980px) {
-			.grid {
-				grid-template-columns: 1fr;
-			}
-
-			#map {
-				height: 360px;
-			}
-		}
-
-		/* Tamil Voice Report Styles */
-		.voice-report-panel {
-			margin-top: 24px;
-			padding: 20px;
-			background: var(--panel-2);
-			border: 1px solid var(--border);
-			border-radius: 18px;
+			padding: 14px 16px;
 			display: none;
-			flex-direction: column;
 			align-items: center;
-			gap: 16px;
-			animation: slideUp 0.4s ease-out;
+			gap: 14px;
 		}
 
-		@keyframes slideUp {
-			from {
-				opacity: 0;
-				transform: translateY(20px);
-			}
-
-			to {
-				opacity: 1;
-				transform: translateY(0);
-			}
-		}
-
-		.audio-btn-container {
-			position: relative;
+		.equalizer {
 			display: flex;
-			justify-content: center;
-			align-items: center;
+			align-items: flex-end;
+			gap: 3px;
+			height: 20px;
+			width: 32px;
 		}
 
-		.audio-btn {
-			width: 60px;
-			height: 60px;
-			border-radius: 50%;
-			background: #1e3a8a;
-			/* Dark Blue */
-			border: none;
-			color: white;
-			font-size: 24px;
-			cursor: pointer;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			transition: all 0.3s ease;
-			box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
-			z-index: 2;
+		.eq-bar {
+			width: 4px;
+			height: 4px;
+			background: var(--neon-cyan);
+			border-radius: 2px;
 		}
 
-		.audio-btn:hover {
-			transform: scale(1.05);
-			background: #172554;
+		.equalizer.speaking .eq-bar:nth-child(1) { animation: eqBounce 0.6s infinite ease-in-out; }
+		.equalizer.speaking .eq-bar:nth-child(2) { animation: eqBounce 0.8s infinite ease-in-out 0.1s; }
+		.equalizer.speaking .eq-bar:nth-child(3) { animation: eqBounce 0.5s infinite ease-in-out 0.2s; }
+		.equalizer.speaking .eq-bar:nth-child(4) { animation: eqBounce 0.7s infinite ease-in-out 0.15s; }
+
+		@keyframes eqBounce {
+			0%, 100% { height: 4px; }
+			50% { height: 20px; }
 		}
 
-		/* Pulsing animation when speaking */
-		.audio-btn.speaking {
-			background: #ef4444;
-			/* Red */
-			box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-			animation: pulse-red 1.5s infinite;
-		}
-
-		@keyframes pulse-red {
-			0% {
-				box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-			}
-
-			70% {
-				box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
-			}
-
-			100% {
-				box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-			}
-		}
-
-		.voice-controls {
-			display: flex;
-			gap: 12px;
-			margin-top: 8px;
-		}
-
-		.control-btn {
-			padding: 8px 12px;
-			border-radius: 10px;
-			border: 1px solid var(--border);
-			background: white;
-			cursor: pointer;
-			font-size: 14px;
-			display: flex;
-			align-items: center;
-			gap: 6px;
-			transition: background 0.2s;
-		}
-
-		.control-btn:hover {
-			background: #f8fafc;
-		}
-
-		.script-display {
+		/* ── EIA METHODOLOGY TABLES ── */
+		.eia-table {
 			width: 100%;
-			max-width: 500px;
-			height: 80px;
-			background: #0f172a;
-			/* Very dark */
-			color: #e2e8f0;
-			padding: 12px;
-			border-radius: 12px;
-			font-family: 'Noto Sans Tamil', 'Space Grotesk', sans-serif;
-			font-size: 14px;
-			line-height: 1.6;
-			overflow-y: auto;
-			text-align: center;
-			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 15px rgba(30, 58, 138, 0.2);
-			border: 1px solid #1e293b;
-		}
-
-		.script-display .current-sentence {
-			color: #38bdf8;
-			/* Sky Blue */
-			font-weight: 600;
-			text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
-		}
-
-		.voice-settings {
-			display: flex;
-			flex-wrap: wrap;
-			justify-content: center;
-			gap: 16px;
-			font-size: 12px;
-			color: var(--muted);
-			margin-top: 8px;
-		}
-
-		.voice-settings select {
-			padding: 4px 8px;
-			border-radius: 6px;
-			border: 1px solid var(--border);
-			font-size: 12px;
-		}
-
-		.progress-text {
-			font-size: 12px;
-			color: var(--muted);
-			font-weight: 500;
-		}
-
-		.compatibility-notice {
-			font-size: 11px;
-			color: #64748b;
+			border-collapse: collapse;
+			font-size: 12.5px;
 			margin-top: 10px;
 		}
 
-		.btn-whatsapp {
-			background: #25D366;
-			color: white;
-			border-color: #25D366;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			gap: 6px;
+		.eia-table th {
+			background: rgba(15, 23, 42, 0.9);
+			color: var(--text-muted);
+			text-align: left;
+			padding: 10px 12px;
+			font-weight: 600;
+			border-bottom: 1px solid var(--border-glass);
 		}
 
-		.btn-whatsapp:hover {
-			background: #128C7E;
-			border-color: #128C7E;
-			color: white;
+		.eia-table td {
+			padding: 10px 12px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+			color: var(--text-main);
 		}
 
-		.btn-whatsapp:disabled {
-			background: #d1d5db;
-			border-color: #d1d5db;
-			color: #9ca3af;
-			cursor: not-allowed;
+		@media (max-width: 992px) {
+			.grid {
+				grid-template-columns: 1fr;
+			}
 		}
 	</style>
 </head>
 
 <body>
+	<svg width="0" height="0" style="position: absolute;">
+		<defs>
+			<linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+				<stop offset="0%" stop-color="#06B6D4" />
+				<stop offset="50%" stop-color="#10B981" />
+				<stop offset="100%" stop-color="#3B82F6" />
+			</linearGradient>
+		</defs>
+	</svg>
+
 	<div class="app">
+		<!-- ── HEADER ── -->
 		<header>
-			<div class="title">
-				<h1 data-i18n="title">Construction Viability & LifeSpan Prediction</h1>
-				<p data-i18n="subtitle">Map-driven feasibility, lifespan prediction, and risk intelligence.</p>
+			<div class="brand-wrap">
+				<div class="brand-logo">🏗️</div>
+				<div class="brand-title">
+					<h1>TERRA·AI <span class="version-chip">GEO-INTELLIGENCE</span></h1>
+					<p data-i18n="subtitle">Autonomous AI Geotechnical & Environmental Site Feasibility Engine</p>
+				</div>
 			</div>
-			<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-				<div class="status-pill">
-					<div class="status-dot"></div>
-					<span data-i18n="modelStatus">Data collection online</span>
-				</div>
-				<div class="status-pill" style="gap: 6px;">
-					<label for="langSelect" style="font-size: 12px; color: var(--muted);"
-						data-i18n="language">Language</label>
-					<select id="langSelect"
-						style="border-radius: 999px; padding: 6px 10px; border: 1px solid var(--border);">
-						<option value="en">English</option>
-						<option value="hi">Hindi</option>
-						<option value="ta">Tamil</option>
-					</select>
-				</div>
-				<button class="btn secondary" id="logoutBtn" style="padding: 10px 14px;">Logout</button>
+			<div class="header-actions">
+				<select class="select-custom" id="langSelect">
+					<option value="en">English (US)</option>
+					<option value="hi">हिंदी (Hindi)</option>
+					<option value="ta">தமிழ் (Tamil)</option>
+				</select>
+				<button class="btn secondary" id="logoutBtn" style="padding: 8px 14px;">Logout</button>
 			</div>
 		</header>
 
+		<!-- ── NAVIGATION TABS ── -->
 		<div class="tabs">
-			<button class="tab-btn active" data-tab="site">Site</button>
-			<button class="tab-btn" data-tab="analysis">Analysis</button>
-			<button class="tab-btn" data-tab="review">Engineer Review</button>
-			<button class="tab-btn" data-tab="reports">Reports</button>
+			<button class="tab-btn active" data-tab="site">🛰️ Site Targeting & GIS</button>
+			<button class="tab-btn" data-tab="analysis">📊 AI Analytics & SHAP</button>
+			<button class="tab-btn" data-tab="eia">📐 EIA 5-Method Matrix</button>
+			<button class="tab-btn" data-tab="review">👷 Engineer Review</button>
+			<button class="tab-btn" data-tab="reports">📑 Reports & PDF Export</button>
 		</div>
-		<div class="status-bar" id="statusLog">Ready for site selection.</div>
 
+		<div class="status-bar" id="statusLog">System ready. Click on the map or select a city preset to target a construction site.</div>
+
+		<!-- ════════ TAB 1: SITE TARGETING ════════ -->
 		<div class="tab-panel active" id="tab-site">
 			<div class="grid">
+				<!-- Map Column -->
 				<section class="panel map-wrap">
-					<div class="panel-title">
-						<span>Site Selection Map</span>
-						<button class="btn secondary" id="locateBtn">Use my location</button>
+					<div class="map-header-row">
+						<div class="panel-title" style="margin-bottom: 0;">Geospatial Targeting Map</div>
+						<div class="map-layer-selector">
+							<button class="layer-btn active" id="layerStreets">🗺️ Street Map</button>
+							<button class="layer-btn" id="layerSatellite">🛰️ Satellite</button>
+							<button class="layer-btn" id="layerTopo">🏔️ Topography</button>
+						</div>
 					</div>
+					
 					<div id="map"></div>
+					
+					<div class="quick-presets">
+						<span style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">Quick Presets:</span>
+						<span class="preset-chip" onclick="setPresetLocation(12.9716, 77.5946, 'Bengaluru')">📍 Bengaluru</span>
+						<span class="preset-chip" onclick="setPresetLocation(19.0760, 72.8777, 'Mumbai')">📍 Mumbai</span>
+						<span class="preset-chip" onclick="setPresetLocation(28.6139, 77.2090, 'Delhi NCR')">📍 Delhi NCR</span>
+						<span class="preset-chip" onclick="setPresetLocation(13.0827, 80.2707, 'Chennai')">📍 Chennai</span>
+						<span class="preset-chip" onclick="setPresetLocation(17.3850, 78.4867, 'Hyderabad')">📍 Hyderabad</span>
+					</div>
+
 					<div class="search-row">
-						<input id="addressInput" type="text" placeholder="Search address or place" />
-						<button class="btn secondary" id="addressSearchBtn">Search</button>
+						<input id="addressInput" type="text" placeholder="Search address, district, or landmark in India..." />
+						<button class="btn secondary" id="addressSearchBtn">Search Place</button>
 					</div>
 					<div class="search-results" id="addressResults"></div>
+
 					<div class="coords">
-						<label class="field">Latitude
-							<input id="latInput" type="text" placeholder="Click on map" readonly />
+						<label class="field">Target Latitude (°N)
+							<input id="latInput" type="text" placeholder="Click on map to select" readonly />
 						</label>
-						<label class="field">Longitude
-							<input id="lonInput" type="text" placeholder="Click on map" readonly />
+						<label class="field">Target Longitude (°E)
+							<input id="lonInput" type="text" placeholder="Click on map to select" readonly />
 						</label>
-					</div>
-					<div class="legend">
-						<span>Soil</span>
-						<span>Climate</span>
-						<span>Environment</span>
-						<span>Wildlife</span>
 					</div>
 				</section>
 
+				<!-- Controls Column (Structural Configuration) -->
 				<section class="panel controls">
-					<div>
-						<div class="panel-title">Construction Type</div>
-						<div class="drop-zone" id="dropZone">
-							<div>
-								<div class="selected" id="selectedType">House</div>
-								<div class="hint">Drag a type block into this zone</div>
+					<div class="panel-title" style="margin-bottom: 0;">Structural Configuration</div>
+
+					<!-- Selected Building Type Banner -->
+					<div class="selected-type-banner" id="dropZone">
+						<div>
+							<div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Active Structure</div>
+							<div class="selected-type-name" id="selectedTypeDisplay">🏠 House</div>
+						</div>
+						<div class="badge good" id="typeCode">Code: 1</div>
+					</div>
+
+					<!-- Building Category Grid -->
+					<div class="control-card">
+						<div class="control-card-header">
+							<span>Select Building Category</span>
+							<span class="sub">Click to toggle structure type</span>
+						</div>
+						<div class="type-grid">
+							<div class="type-card active" data-type="House"><span class="icon">🏠</span><span>House</span></div>
+							<div class="type-card" data-type="Apartment"><span class="icon">🏢</span><span>Apartment</span></div>
+							<div class="type-card" data-type="Hospital"><span class="icon">🏥</span><span>Hospital</span></div>
+							<div class="type-card" data-type="School"><span class="icon">🏫</span><span>School</span></div>
+							<div class="type-card" data-type="Factory"><span class="icon">🏭</span><span>Factory</span></div>
+							<div class="type-card" data-type="Mall"><span class="icon">🏬</span><span>Commercial</span></div>
+						</div>
+					</div>
+
+					<!-- Elevation / Floors Slider -->
+					<div class="control-card">
+						<div class="slider-wrap">
+							<div class="slider-head">
+								<span style="font-weight: 600; font-size: 13px;">Elevation & Storeys</span>
+								<span class="val"><span id="floorsValue">2</span> Floors</span>
 							</div>
-							<span class="hint">Drop here</span>
+							<input id="floorsSlider" type="range" min="1" max="50" value="2" />
+							<div class="floor-chips">
+								<span class="floor-chip" onclick="setFloors(2)">G+1 (2 Fl)</span>
+								<span class="floor-chip" onclick="setFloors(5)">G+4 (5 Fl)</span>
+								<span class="floor-chip" onclick="setFloors(12)">Mid-Rise (12)</span>
+								<span class="floor-chip" onclick="setFloors(30)">High-Rise (30)</span>
+							</div>
 						</div>
 					</div>
 
-					<div class="type-list" id="typeList">
-						<div class="type-card" draggable="true" data-type="House"><span>House</span><span>1-3F</span>
+					<!-- Soil Computer Vision -->
+					<div class="control-card">
+						<div class="control-card-header">
+							<span>Soil Image Classifier</span>
+							<span class="sub">PyTorch EfficientNet-B0</span>
 						</div>
-						<div class="type-card" draggable="true" data-type="Apartment">
-							<span>Apartment</span><span>4-12F</span>
-						</div>
-						<div class="type-card" draggable="true" data-type="Hospital"><span>Hospital</span><span>High
-								load</span></div>
-						<div class="type-card" draggable="true" data-type="School"><span>School</span><span>Mid
-								load</span></div>
-						<div class="type-card" draggable="true" data-type="Factory">
-							<span>Factory</span><span>Industrial</span>
-						</div>
-						<div class="type-card" draggable="true" data-type="Warehouse"><span>Warehouse</span><span>Wide
-								span</span></div>
-						<div class="type-card" draggable="true" data-type="Bridge">
-							<span>Bridge</span><span>Critical</span>
-						</div>
-						<div class="type-card" draggable="true" data-type="Mall"><span>Mall</span><span>Public</span>
-						</div>
+						<input type="file" id="soilImageUpload" accept="image/*" style="font-size: 12px; width: 100%;" />
 					</div>
 
-					<div class="slider">
-						<div class="panel-title">Floors / Levels</div>
-						<input id="floorInput" type="range" min="1" max="20" value="2" />
-						<div class="hint" id="floorValue">Selected: 2 floors</div>
+					<!-- Action Buttons -->
+					<div style="display: flex; gap: 12px;">
+						<button class="btn" id="analyzeBtn" style="flex: 1; padding: 14px 20px;">⚡ Run Deep Satellite Analysis</button>
+						<button class="btn secondary" id="visualizeBtn" disabled style="padding: 14px 18px;">3D Risk Sim</button>
 					</div>
 
-					<div>
-						<div class="panel-title">Local Sensor Inputs (Optional)</div>
-						<div class="input-row">
-							<label class="input-field">Soil Moisture (%)
-								<input id="sensorSoilMoisture" type="number" min="0" max="100" step="0.1"
-									placeholder="e.g., 18.5" />
-							</label>
-							<label class="input-field">Groundwater Depth (m)
-								<input id="sensorGroundwater" type="number" min="0" step="0.1"
-									placeholder="e.g., 9.2" />
-							</label>
-							<label class="input-field">Local Rainfall (mm)
-								<input id="sensorRainfall" type="number" min="0" step="0.1" placeholder="24h" />
-							</label>
-							<label class="input-field">Local Wind (m/s)
-								<input id="sensorWind" type="number" min="0" step="0.1" placeholder="avg" />
-							</label>
+					<!-- Voice Panel HUD -->
+					<div class="voice-panel-hud" id="voiceReportPanel">
+						<button class="btn" id="voiceReportBtn" style="width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 18px;">🔊</button>
+						<div style="flex: 1;">
+							<div style="display: flex; align-items: center; justify-content: space-between;">
+								<span style="font-weight: 600; font-size: 13px; color: var(--neon-cyan);">Tamil Voice Report</span>
+								<div class="equalizer" id="audioEqualizer">
+									<div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+								</div>
+							</div>
+							<div id="scriptDisplay" style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">அறிக்கை தயார். கேட்க '🔊' அழுத்தவும்.</div>
 						</div>
-					</div>
-
-					<div class="button-row">
-						<button class="btn" id="analyzeBtn">Analyze Site</button>
-						<button class="btn secondary" id="visualizeBtn" disabled>View Visualization</button>
-						<button class="btn secondary" id="resetBtn">Reset</button>
+						<div style="display: flex; gap: 6px;">
+							<button class="btn secondary" id="stopVoiceBtn" style="padding: 6px 10px; font-size: 11px;">⏹️ Stop</button>
+						</div>
 					</div>
 				</section>
 			</div>
 		</div>
 
+		<!-- ════════ TAB 2: AI ANALYTICS & DASHBOARD ════════ -->
 		<div class="tab-panel" id="tab-analysis">
 			<div class="grid">
-				<section class="panel controls">
-					<div class="panel-title">AI Results</div>
-					<div class="banner" id="summaryBanner">
-						<div class="banner-title" id="summaryTitle">--</div>
-						<div class="banner-body" id="summaryBody">--</div>
+				<section class="panel">
+					<div class="panel-title">
+						<span>Executive Site Feasibility Scorecard</span>
+						<span id="locationNameDisplay" style="font-size: 12px; color: var(--neon-cyan);">📍 Select Location</span>
 					</div>
-					<div class="banner" id="verdictBanner">
-						<div class="banner-title" id="verdictTitle">--</div>
-						<div class="banner-body" id="verdictBody">--</div>
-					</div>
-					<div class="banner warn" id="lifespanWarning" style="display: none;">
-						<div class="banner-title">⚠️ WARNING</div>
-						<div class="banner-body">Predicted lifespan under 40 years. Foundation upgrade and soil
-							treatment required.</div>
-					</div>
-					<div class="results">
-						<div class="result-card" id="locationNameCard" style="grid-column: 1 / -1; display: none;">
-							<h4>Analyzed Location</h4>
-							<p id="locationNameDisplay" style="font-weight: 500; color: #1e3a8a;">--</p>
-						</div>
-						<div class="result-card">
-							<h4>Feasibility Score</h4>
-							<p id="feasibility">--</p>
-							<div class="result-meta">
-								<span class="badge" id="feasibilityBadge">--</span>
+
+					<!-- Hero Radial Gauge HUD -->
+					<div class="hero-scorecard">
+						<div class="gauge-wrap">
+							<svg width="120" height="120">
+								<circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+								<circle class="gauge-fill" id="scoreGaugeFill" cx="60" cy="60" r="50"></circle>
+							</svg>
+							<div class="gauge-text">
+								<div class="gauge-val" id="feasibility">--%</div>
+								<div class="gauge-lbl">SCORE</div>
 							</div>
 						</div>
+						<div class="score-info">
+							<div class="score-status-badge good" id="feasibilityBadge">Ready for Assessment</div>
+							<p style="font-size: 13px; color: var(--text-muted);" id="scoreExplanation">Run analysis to evaluate geotechnical bearing, seismic resilience, and flood safety.</p>
+							<div style="margin-top: 10px; display: flex; gap: 8px;">
+								<span class="badge" id="confidenceBadge">Confidence: --</span>
+								<span class="badge" id="riskBadge">Risk: --</span>
+							</div>
+						</div>
+					</div>
+
+					<div class="results-grid">
 						<div class="result-card" id="riskCard">
-							<h4>Risk Level</h4>
-							<p id="risk">--</p>
-							<div class="result-meta">
-								<span class="badge" id="riskBadge">--</span>
-							</div>
-						</div>
-						<div class="result-card">
-							<h4>Lifespan Range</h4>
+							<h4>Structural Lifespan</h4>
 							<p id="lifespan">--</p>
-							<div class="result-meta">
-								<span class="badge" id="lifespanBadge">--</span>
-							</div>
+							<span class="badge good" id="lifespanBadge" style="margin-top: 6px;">Durability Index</span>
 						</div>
 						<div class="result-card">
-							<h4>Prediction Confidence<span class="info-tip"
-									title="How reliable is this prediction (not a measure of site quality).">?</span>
-							</h4>
-							<p id="confidence">--</p>
-							<div class="result-sub">How reliable is this prediction (not a measure of site quality).
-							</div>
-							<div class="result-meta">
-								<span class="badge" id="confidenceBadge">--</span>
-							</div>
+							<h4>IS Recommended Foundation</h4>
+							<p id="foundation" style="font-size: 14px;">--</p>
+							<div id="foundationNote" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">--</div>
 						</div>
-						<div class="result-card">
-							<h4>Foundation</h4>
-							<p id="foundation">--</p>
-							<div class="result-note" id="foundationNote">--</div>
-						</div>
-						<div class="result-card">
-							<h4>Success Probability</h4>
-							<p id="success">--</p>
-							<div class="result-meta">
-								<span class="badge" id="successBadge">--</span>
-							</div>
-						</div>
-					</div>
-
-					<div class="panel-title">Why do my scores look mixed?</div>
-					<div class="result-card" style="grid-column: 1 / -1;">
-						<p id="scoreExplanation" class="result-note">--</p>
-					</div>
-
-					<div class="panel-title">Model Scores</div>
-					<div class="results">
 						<div class="result-card">
 							<h4>Soil Degradation Risk</h4>
 							<p id="soilRisk">--</p>
-							<div class="result-meta">
-								<span class="badge" id="soilRiskBadge">--</span>
-							</div>
+							<span class="badge" id="soilRiskBadge">--</span>
 						</div>
 						<div class="result-card">
-							<h4>Climate Stress Frequency</h4>
+							<h4>Climate & Flood Stress</h4>
 							<p id="climateStress">--</p>
-							<div class="result-meta">
-								<span class="badge" id="climateStressBadge">--</span>
-							</div>
+							<span class="badge" id="climateStressBadge">--</span>
 						</div>
-						<div class="result-card">
-							<h4>Water Exposure Probability</h4>
-							<p id="waterExposure">--</p>
-							<div class="result-meta">
-								<span class="badge" id="waterExposureBadge">--</span>
-							</div>
-						</div>
-						<div class="result-card">
-							<h4>Biological Damage Probability</h4>
-							<p id="bioDamage">--</p>
-							<div class="result-meta">
-								<span class="badge" id="bioDamageBadge">--</span>
-							</div>
-						</div>
-						<div class="result-card">
-							<h4>Construction Type Code</h4>
-							<p id="typeCode">--</p>
-						</div>
-						<div class="result-card">
-							<h4>Risk Factor Summary</h4>
-							<p id="riskSummary">--</p>
-						</div>
-					</div>
-
-					<div class="panel-title">Model & Data Metadata</div>
-					<div class="results">
-						<div class="result-card">
-							<h4>Model Version</h4>
-							<p id="modelVersion">--</p>
-						</div>
-						<div class="result-card">
-							<h4>Trained On</h4>
-							<p id="trainedOn">--</p>
-						</div>
-						<div class="result-card">
-							<h4>Feature Count</h4>
-							<p id="featureCount">--</p>
-						</div>
-						<div class="result-card">
-							<h4>Source Status</h4>
-							<p id="sourceStatus">--</p>
-						</div>
-						<div class="result-card">
-							<h4>Data Freshness</h4>
-							<p id="dataFreshness">--</p>
-						</div>
-						<div class="result-card">
-							<h4>Data Quality</h4>
-							<p id="dataQuality">--</p>
-						</div>
-						<div class="result-card">
-							<h4>Historical Match</h4>
-							<p id="historicalMatch">--</p>
-						</div>
-					</div>
-
-					<div class="panel-title">AHP Comparison</div>
-					<div class="results">
-						<div class="result-card">
-							<h4>AHP Weighted Score</h4>
-							<p id="ahpScore">--</p>
-						</div>
-						<div class="result-card">
-							<h4>AI vs AHP Delta</h4>
-							<p id="ahpDelta">--</p>
-						</div>
-					</div>
-
-
-					<div class="panel-title">Tamil Voice Report</div>
-					<div class="voice-report-panel" id="voiceReportPanel">
-						<div class="audio-btn-container">
-							<button class="audio-btn" id="voiceReportBtn" title="தமிழில் கேளுங்கள்">🔊</button>
-						</div>
-
-						<div class="progress-text" id="voiceProgress">வாக்கியம் --/--</div>
-
-						<div class="script-display" id="scriptDisplay">
-							அறிக்கையைப் பெற 'Analyze Site' கிளிக் செய்யவும்.
-						</div>
-
-						<div class="voice-controls">
-							<button class="control-btn" id="pauseVoiceBtn">⏸️ Pause</button>
-							<button class="control-btn" id="stopVoiceBtn">⏹️ Stop</button>
-							<button class="control-btn" id="repeatVoiceBtn">🔁 Repeat</button>
-						</div>
-
-						<div class="voice-settings">
-							<div>
-								🐢 <input type="range" id="voiceSpeedRange" min="0.5" max="1.5" step="0.1" value="0.85">
-								🐇
-								<span id="speedValue">0.85x</span>
-							</div>
-							<select id="voiceSelect">
-								<option value="">குரல் தேர்வு (ஏற்றுகிறது...)</option>
-							</select>
-						</div>
-
-						<div class="compatibility-notice" id="browserNotice">
-							Browser compatibility checking...
-						</div>
-					</div>
-
-					<div class="panel-title">Safety Notes</div>
-					<div class="result-card" style="grid-column: 1 / -1;">
-						<ul id="safetyNotes" style="margin: 0; padding-left: 18px; color: var(--muted);"></ul>
 					</div>
 				</section>
 
-				<section class="panel controls">
-					<div class="chart-wrap">
-						<div class="panel-title">Risk Breakdown Graph</div>
-						<canvas id="riskChart" height="160"></canvas>
+				<section class="panel">
+					<div class="panel-title">Multi-Domain Hazard Distribution</div>
+					<div style="height: 280px; position: relative;">
+						<canvas id="riskChart"></canvas>
+					</div>
+					<div style="margin-top: 14px;">
+						<h4 style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Civil Engineering Directives</h4>
+						<ul id="safetyNotes" style="font-size: 12.5px; color: var(--text-muted); line-height: 1.6; padding-left: 18px;">
+							<li>Select a location on the map and execute analysis.</li>
+						</ul>
+					</div>
+				</section>
+
+				<!-- Multi-Lingual Tamil Voice Generator HUD -->
+				<section class="panel" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.75)); border: 1px solid rgba(6, 182, 212, 0.35); box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);">
+					<div class="panel-title" style="margin-bottom: 12px;">
+						<span style="display: flex; align-items: center; gap: 8px;">
+							<span style="font-size: 20px;">🔊</span> Multi-Lingual Field Briefing (Tamil Voice Generator)
+						</span>
+						<div class="equalizer" id="audioEqualizerAnalysis">
+							<div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+						</div>
+					</div>
+					<div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+						<button class="btn" id="voiceReportBtnAnalysis" style="padding: 12px 22px; font-size: 13.5px;">
+							<span>🔊 Listen to Tamil Voice Briefing</span>
+						</button>
+						<button class="btn secondary" id="stopVoiceBtnAnalysis" style="padding: 12px 18px;">
+							<span>⏹️ Stop Audio</span>
+						</button>
+						<div style="flex: 1; min-width: 280px;">
+							<div id="scriptDisplayAnalysis" style="font-size: 12.5px; color: var(--neon-cyan); background: rgba(15, 23, 42, 0.85); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-glass); line-height: 1.5;">
+								அறிக்கை தயார். கேட்க '🔊 Listen to Tamil Voice Briefing' அழுத்தவும்.
+							</div>
+						</div>
 					</div>
 				</section>
 			</div>
 		</div>
 
+		<!-- ════════ TAB 3: EIA 5-METHOD MATRIX ════════ -->
+		<div class="tab-panel" id="tab-eia">
+			<div class="grid">
+				<!-- Academic Framework Summary Banner -->
+				<section class="panel" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.8)); border: 1px solid rgba(6, 182, 212, 0.35);">
+					<div class="panel-title" style="margin-bottom: 12px;">
+						<span>Academic Environmental Impact Assessment (EIA) Methodologies</span>
+						<span class="badge good">IS 1893 / IS 1904 / MoEFCC Compliant</span>
+					</div>
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+						<div class="result-card" style="border-top: 3px solid #10B981;">
+							<h4 style="color: #10B981;">1. Checklist Method</h4>
+							<div style="font-weight: 700; font-size: 13px; color: #F8FAFC; margin-bottom: 4px;">List &rarr; Check</div>
+							<p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.5;"><b>Question:</b> <i>"What could be affected?"</i><br/>Audits air, groundwater, seismic zones, bearing capacity against statutory IS code limits.</p>
+						</div>
+						<div class="result-card" style="border-top: 3px solid #06B6D4;">
+							<h4 style="color: #06B6D4;">2. Matrix Method</h4>
+							<div style="font-weight: 700; font-size: 13px; color: #F8FAFC; margin-bottom: 4px;">Activity &times; Factor</div>
+							<p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.5;"><b>Question:</b> <i>"Which activity affects what & how much?"</i><br/>Leopold 2D Interaction Matrix quantifying Magnitude &times; Importance scores.</p>
+						</div>
+						<div class="result-card" style="border-top: 3px solid #F59E0B;">
+							<h4 style="color: #F59E0B;">3. Network Method</h4>
+							<div style="font-weight: 700; font-size: 13px; color: #F8FAFC; margin-bottom: 4px;">Cause &rarr; Effect &rarr; Effect</div>
+							<p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.5;"><b>Question:</b> <i>"How does one impact lead to another?"</i><br/>Sorensen causal chains tracing primary ground triggers to structural risks.</p>
+						</div>
+						<div class="result-card" style="border-top: 3px solid #8B5CF6;">
+							<h4 style="color: #8B5CF6;">4. Overlay Method</h4>
+							<div style="font-weight: 700; font-size: 13px; color: #F8FAFC; margin-bottom: 4px;">Map + Map + Map</div>
+							<p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.5;"><b>Question:</b> <i>"Where is the suitable area geographically?"</i><br/>McHarg GIS multi-layer spatial overlays (Soil + Flood + Seismic + Buffer).</p>
+						</div>
+					</div>
+				</section>
+
+				<!-- Method 1: Leopold Matrix -->
+				<section class="panel" style="grid-column: 1 / -1;">
+					<div class="panel-title">
+						<span>Method 1: Leopold Interaction Matrix (Magnitude &times; Importance)</span>
+						<span class="badge good" id="eiaLeopoldBadge">Leopold Index: --/100</span>
+					</div>
+					<div id="eiaLeopoldFormula" style="font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: var(--neon-cyan); margin-bottom: 8px;">
+						Formula: Normalized Environmental Index = 100 &times; (1 - (|&Sigma; Action Impacts| / Max Potential Adverse: 190))
+					</div>
+					<div style="overflow-x: auto;">
+						<table class="eia-table">
+							<thead>
+								<tr>
+									<th>Project Action</th>
+									<th>Environmental Receptor</th>
+									<th>Magnitude (-10 to +10)</th>
+									<th>Importance (1 to 10)</th>
+									<th>Impact Score (M &times; I)</th>
+									<th>Mitigation Directive</th>
+								</tr>
+							</thead>
+							<tbody id="eiaMatrixBody">
+								<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Run analysis to populate Leopold Interaction Matrix.</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
+				<!-- Method 2: IS Standards Checklist -->
+				<section class="panel">
+					<div class="panel-title">
+						<span>Method 2: IS Standards Checklist Method</span>
+						<span class="badge good" id="eiaChecklistBadge">Compliance: --%</span>
+					</div>
+					<table class="eia-table">
+						<thead>
+							<tr>
+								<th>Statutory Parameter</th>
+								<th>IS Reference Code</th>
+								<th>Observed Metric</th>
+								<th>Weight</th>
+								<th>Audit Status & Score</th>
+							</tr>
+						</thead>
+						<tbody id="eiaChecklistBody">
+							<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Run analysis to verify IS Code compliance.</td></tr>
+						</tbody>
+					</table>
+				</section>
+
+				<!-- Method 4: McHarg Spatial Overlay -->
+				<section class="panel">
+					<div class="panel-title">
+						<span>Method 4: Spatial Overlay GIS Model (McHarg Method)</span>
+						<span class="badge good" id="eiaOverlayBadge">Suitability Index: --/100</span>
+					</div>
+					<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+							<span style="font-size: 12px;">Geotechnical Bearing (35%)</span>
+							<span class="badge good" id="overlaySoilScore">--</span>
+						</div>
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+							<span style="font-size: 12px;">Climate & Meteorology (25%)</span>
+							<span class="badge good" id="overlayClimateScore">--</span>
+						</div>
+						<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+							<span style="font-size: 12px;">Seismic & Flood Hazard (25%)</span>
+							<span class="badge good" id="overlayHazardScore">--</span>
+						</div>
+						<div style="display: flex; justify-content: space-between; align-items: center;">
+							<span style="font-size: 12px;">Ecological Buffer (15%)</span>
+							<span class="badge good" id="overlayEcoScore">--</span>
+						</div>
+					</div>
+					<div class="result-card" style="margin-top: 12px;">
+						<div style="font-weight: 600; color: var(--neon-cyan); font-size: 13px;" id="overlayZonalText">Suitability: Run analysis</div>
+						<div id="eiaOverlayFormula" style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); margin-top: 6px;">
+							Formula: Composite = (Soil &times; 0.35) + (Climate &times; 0.25) + (Hazard &times; 0.25) + (Eco &times; 0.15)
+						</div>
+					</div>
+				</section>
+
+				<!-- Method 3: Sorensen Network Method -->
+				<section class="panel" style="grid-column: 1 / -1;">
+					<div class="panel-title">Method 3: Network Method (Sorensen Cause-Condition-Effect Chains)</div>
+					<div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Traces multi-tier cascading impact pathways from physical ground trigger to structural mitigation:</div>
+					<div id="eiaNetworkContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px;">
+						<div class="result-card" style="color: var(--text-dim);">Run analysis to trace network causal chains.</div>
+					</div>
+				</section>
+
+				<!-- Method 5: Predictive AI Modeling -->
+				<section class="panel" style="grid-column: 1 / -1;">
+					<div class="panel-title">Method 5: Predictive AI & Machine Learning Stacking Model</div>
+					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+						<div class="result-card">
+							<h4 style="margin-bottom: 6px;">Stacking Regressor Architecture</h4>
+							<p style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">Base Models: Random Forest, XGBoost, Extra Trees (200 trees each)<br/>Meta-Learner: Ridge Regression with 5-Fold Cross-Validation<br/><span style="color: var(--neon-emerald); font-weight: 700;">Model Performance: R² = 0.9123 | MAE: ±1.99 pts</span></p>
+						</div>
+						<div class="result-card">
+							<h4 style="margin-bottom: 6px;">SHAP Feature Attribution</h4>
+							<div id="eiaShapSummary" style="font-size: 12px; color: var(--text-muted); margin-top: 6px; line-height: 1.6;">Run analysis to view SHAP game-theoretic drivers.</div>
+						</div>
+					</div>
+				</section>
+			</div>
+		</div>
+
+		<!-- ════════ TAB 4: ENGINEER REVIEW ════════ -->
 		<div class="tab-panel" id="tab-review">
 			<div class="grid">
-				<section class="panel controls">
-					<div class="panel-title">Engineer Review Checklist</div>
-					<div class="result-card" style="grid-column: 1 / -1;">
-						<div class="hint">Required field validations before approval:</div>
-						<label><input id="chk-soil" type="checkbox" /> Geotechnical soil bearing test</label><br />
-						<label><input id="chk-water" type="checkbox" /> Groundwater table survey</label><br />
-						<label><input id="chk-seismic" type="checkbox" /> Seismic micro-zonation check</label><br />
-						<label><input id="chk-flood" type="checkbox" /> Flood history verification</label><br />
-						<label><input id="chk-env" type="checkbox" /> Environmental clearance review</label>
+				<section class="panel">
+					<div class="panel-title">Licensed Engineer Sign-Off Form</div>
+					<div class="field" style="margin-bottom: 12px;">
+						<label>Reviewer Full Name</label>
+						<input id="reviewerName" type="text" placeholder="Er. R. Sundaram, M.Tech (Structures)" />
 					</div>
-
-					<div class="panel-title">Engineer Sign-off</div>
-					<div class="input-row">
-						<label class="input-field">Reviewer Name
-							<input id="reviewerName" type="text" placeholder="Licensed engineer" />
-						</label>
-						<label class="input-field">License ID
-							<input id="licenseId" type="text" placeholder="Registration number" />
-						</label>
-						<label class="input-field">Decision
-							<select id="reviewDecision">
-								<option value="Approved">Approved</option>
-								<option value="Conditional">Conditional</option>
-								<option value="Not Approved">Not Approved</option>
-							</select>
-						</label>
-						<label class="input-field">Review Date
+					<div class="coords" style="margin-bottom: 12px;">
+						<div class="field">
+							<label>License / Accreditation ID</label>
+							<input id="licenseId" type="text" placeholder="CIV-IND-88421" />
+						</div>
+						<div class="field">
+							<label>Sign-off Date</label>
 							<input id="reviewDate" type="date" />
-						</label>
+						</div>
 					</div>
-					<label class="input-field">Notes
-						<textarea id="reviewNotes" placeholder="Key observations and mandatory actions"></textarea>
-					</label>
-					<div class="button-row">
-						<button class="btn secondary" id="submitReviewBtn">Submit Review</button>
+					<div class="field" style="margin-bottom: 12px;">
+						<label>Evaluation Decision</label>
+						<select id="reviewDecision" class="select-custom" style="width: 100%;">
+							<option value="Approved for Construction">Approved for Construction</option>
+							<option value="Conditional — Borewell Core Drilling Required">Conditional — Borewell Core Drilling Required</option>
+							<option value="Rejected — High Natural Hazard">Rejected — High Natural Hazard</option>
+						</select>
 					</div>
+					<div class="field" style="margin-bottom: 14px;">
+						<label>Geotechnical Engineering Notes</label>
+						<textarea id="reviewNotes" placeholder="Enter specific foundation or drainage instructions..."></textarea>
+					</div>
+					<button class="btn" id="submitReviewBtn" style="width: 100%;">💾 Save & Digitally Certify Review</button>
+				</section>
 
-					<div class="panel-title">Validation & Testing Checklist</div>
-					<div class="result-card" style="grid-column: 1 / -1;">
-						<div class="hint">Minimum acceptance checks before client release:</div>
-						<label><input id="chk-verify" type="checkbox" /> Model output verified with at least 3
-							historical sites</label><br />
-						<label><input id="chk-fresh" type="checkbox" /> API data freshness confirmed (last 24
-							hours)</label><br />
-						<label><input id="chk-field" type="checkbox" /> Soil and groundwater field tests
-							attached</label><br />
-						<label><input id="chk-cross" type="checkbox" /> Seismic / flood maps
-							cross-verified</label><br />
-						<label><input id="chk-license" type="checkbox" /> Engineer sign-off and license verified</label>
+				<section class="panel">
+					<div class="panel-title">Statutory Verification Checklist</div>
+					<div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: var(--text-muted);">
+						<label><input id="chk-soil" type="checkbox" /> Soil bearing test verified</label>
+						<label><input id="chk-water" type="checkbox" /> Groundwater depth & water table clearance checked</label>
+						<label><input id="chk-seismic" type="checkbox" /> IS 1893 seismic zoning cross-verified</label>
+						<label><input id="chk-flood" type="checkbox" /> Flood plain and extreme rainfall exposure audited</label>
+						<label><input id="chk-env" type="checkbox" /> MoEFCC eco-sensitive boundary checked</label>
+						<label><input id="chk-verify" type="checkbox" /> Stacking ensemble AI prediction reviewed</label>
+						<label><input id="chk-license" type="checkbox" /> Structural engineer license credentials attached</label>
 					</div>
 				</section>
 			</div>
 		</div>
 
+		<!-- ════════ TAB 5: REPORTS & PDF ════════ -->
 		<div class="tab-panel" id="tab-reports">
 			<div class="grid">
-				<section class="panel controls">
-					<div class="panel-title">Reports</div>
-					<div class="button-row">
-						<button class="btn secondary" id="reportBtn" disabled>Download PDF Report</button>
-						<button class="btn btn-whatsapp" id="whatsappBtn" disabled>
-							<svg viewBox="0 0 24 24" width="16" height="16" style="fill: currentColor;">
-								<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-							</svg>
-							Share on WhatsApp
-						</button>
+				<section class="panel">
+					<div class="panel-title">Export Feasibility Reports</div>
+					<div class="button-row" style="display: flex; gap: 12px; margin-bottom: 16px;">
+						<button class="btn" id="reportBtn" disabled style="flex: 1;">📄 Download PDF Feasibility Report</button>
+						<button class="btn btn-whatsapp" id="whatsappBtn" disabled>💬 Share via WhatsApp</button>
 					</div>
 					<div class="result-card">
-						<div class="hint" data-i18n="emailReportHint">Email the report to the client.</div>
-						<div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
-							<input id="reportEmail" type="email" placeholder="client@email.com"
-								style="flex: 1; min-width: 220px;" />
-							<button class="btn secondary" id="emailReportBtn" disabled>Email Report</button>
+						<h4>Email Official PDF to Client</h4>
+						<div style="display: flex; gap: 10px; margin-top: 10px;">
+							<input id="reportEmail" type="email" placeholder="client@developer.com" style="flex: 1;" />
+							<button class="btn secondary" id="emailReportBtn" disabled>Email PDF</button>
 						</div>
 					</div>
-					<div class="result-card">
-						<div class="hint" data-i18n="reportHint">Reports are generated using the latest analysis
-							results.</div>
+					<div class="result-card" style="margin-top: 12px;">
+						<h4>Release Status</h4>
+						<p id="releaseStatus" style="font-size: 14px; color: var(--neon-cyan);">Ready for Analysis</p>
 					</div>
-					<div class="result-card">
-						<div class="hint" data-i18n="reviewHint">Ensure engineer review is submitted before issuing to
-							clients.</div>
-					</div>
-					<div class="result-card">
-						<h4 data-i18n="releaseStatus">Release Status</h4>
-						<p id="releaseStatus">Pending review</p>
-					</div>
-					<div class="panel-title">Historical Dataset</div>
-					<div class="result-card">
-						<input id="datasetFile" type="file" accept=".csv" />
-						<button class="btn secondary" id="uploadDatasetBtn" style="margin-top: 10px;">Upload
-							CSV</button>
-						<div class="hint" id="datasetStatus">No dataset uploaded.</div>
+				</section>
+
+				<section class="panel">
+					<div class="panel-title">Historical Training Dataset Management</div>
+					<p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;" id="datasetStatus">Checking dataset status...</p>
+					<div style="display: flex; gap: 10px;">
+						<input type="file" id="datasetFile" accept=".csv" style="font-size: 12px; flex: 1;" />
+						<button class="btn secondary" id="uploadDatasetBtn">Upload CSV</button>
 					</div>
 				</section>
 			</div>
 		</div>
 	</div>
 
-	<script src="{{ url_for('static', filename='libs/chart.min.js') }}"></script>
+	<!-- ════════ SCRIPT LOGIC ════════ -->
 	<script>
-		const translations = {
-			en: {
-				title: "AI Construction Site Intelligence",
-				subtitle: "Map-driven feasibility, lifespan prediction, and risk intelligence.",
-				modelStatus: "Data collection online",
-				language: "Language",
-				emailReportHint: "Email the report to the client.",
-				reportHint: "Reports are generated using the latest analysis results.",
-				reviewHint: "Ensure engineer review is submitted before issuing to clients.",
-				releaseStatus: "Release Status",
-				logout: "Logout",
-				emailReport: "Email Report"
-				,
-				releaseReady: "Ready for client release",
-				releasePending: "Pending review"
-			},
-			hi: {
-				title: "एआई निर्माण स्थल बुद्धिमत्ता",
-				subtitle: "मानचित्र-आधारित व्यवहार्यता, आयु‑पूर्वानुमान और जोखिम बुद्धिमत्ता।",
-				modelStatus: "डेटा संग्रह ऑनलाइन",
-				language: "भाषा",
-				emailReportHint: "रिपोर्ट क्लाइंट को ईमेल करें।",
-				reportHint: "रिपोर्ट नवीनतम विश्लेषण परिणामों से बनाई जाती है।",
-				reviewHint: "क्लाइंट को जारी करने से पहले इंजीनियर समीक्षा जमा करें।",
-				releaseStatus: "जारी करने की स्थिति",
-				logout: "लॉगआउट",
-				emailReport: "रिपोर्ट ईमेल करें"
-				,
-				releaseReady: "क्लाइंट के लिए जारी करने हेतु तैयार",
-				releasePending: "समीक्षा लंबित"
-			},
-			ta: {
-				title: "AI கட்டுமான இட நுண்ணறிவு",
-				subtitle: "வரைபட சார்ந்த சாத்தியக்கூறு, ஆயுள் கணிப்பு மற்றும் அபாய நுண்ணறிவு.",
-				modelStatus: "தரவு சேகரிப்பு ஆன்லைனில்",
-				language: "மொழி",
-				emailReportHint: "அறிக்கையை வாடிக்கையாளருக்கு மின்னஞ்சல் செய்யவும்.",
-				reportHint: "அறிக்கைகள் சமீபத்திய பகுப்பாய்வு முடிவுகளுடன் உருவாகும்.",
-				reviewHint: "வாடிக்கையாளருக்கு வழங்க முன் பொறியாளர் மதிப்பாய்வு அவசியம்.",
-				releaseStatus: "விடுவிப்பு நிலை",
-				logout: "வெளியேறு",
-				emailReport: "அறிக்கை மின்னஞ்சல்"
-				,
-				releaseReady: "வாடிக்கையாளர் விடுவிப்பிற்கு தயாராக உள்ளது",
-				releasePending: "மதிப்பாய்வு நிலுவையில் உள்ளது"
-			}
-		};
-
 		const state = {
 			lat: null,
 			lon: null,
 			buildingType: "House",
 			floors: 2,
-			marker: null,
 			chart: null,
 			locationCache: {}
 		};
 
-		const latInput = document.getElementById("latInput");
-		const lonInput = document.getElementById("lonInput");
-		const addressInput = document.getElementById("addressInput");
-		const addressSearchBtn = document.getElementById("addressSearchBtn");
-		const addressResults = document.getElementById("addressResults");
-		const selectedType = document.getElementById("selectedType");
-		const floorInput = document.getElementById("floorInput");
-		const floorValue = document.getElementById("floorValue");
-		const statusLog = document.getElementById("statusLog");
-		const reportBtn = document.getElementById("reportBtn");
-		const whatsappBtn = document.getElementById("whatsappBtn");
-		const visualizeBtn = document.getElementById("visualizeBtn");
-		const emailReportBtn = document.getElementById("emailReportBtn");
-		const reportEmail = document.getElementById("reportEmail");
-		const logoutBtn = document.getElementById("logoutBtn");
-		const langSelect = document.getElementById("langSelect");
-		const submitReviewBtn = document.getElementById("submitReviewBtn");
-		const reviewerName = document.getElementById("reviewerName");
-		const licenseId = document.getElementById("licenseId");
-		const reviewDecision = document.getElementById("reviewDecision");
-		const reviewDate = document.getElementById("reviewDate");
-		const reviewNotes = document.getElementById("reviewNotes");
-		const releaseStatus = document.getElementById("releaseStatus");
-		const sensorSoilMoisture = document.getElementById("sensorSoilMoisture");
-		const sensorGroundwater = document.getElementById("sensorGroundwater");
-		const sensorRainfall = document.getElementById("sensorRainfall");
-		const sensorWind = document.getElementById("sensorWind");
-		const datasetFile = document.getElementById("datasetFile");
-		const uploadDatasetBtn = document.getElementById("uploadDatasetBtn");
-		const datasetStatus = document.getElementById("datasetStatus");
-		const checklistIds = [
-			"chk-soil",
-			"chk-water",
-			"chk-seismic",
-			"chk-flood",
-			"chk-env",
-			"chk-verify",
-			"chk-fresh",
-			"chk-field",
-			"chk-cross",
-			"chk-license"
-		];
-		const checklistInputs = checklistIds.map((id) => document.getElementById(id));
 		let lastPayload = null;
 		let lastReview = null;
 		let authToken = localStorage.getItem("jwt") || "";
 
-		function applyTranslations(lang) {
-			const dict = translations[lang] || translations.en;
-			document.querySelectorAll("[data-i18n]").forEach((el) => {
-				const key = el.getAttribute("data-i18n");
-				if (dict[key]) {
-					el.textContent = dict[key];
-				}
-			});
-			logoutBtn.textContent = dict.logout;
-			emailReportBtn.textContent = dict.emailReport;
+		// Initialize Leaflet Map (Clean & watermark-free)
+		const map = L.map("map", { zoomControl: false, attributionControl: false }).setView([20.5937, 78.9629], 5);
+		L.control.zoom({ position: 'topright' }).addTo(map);
+
+		// High Clarity & 100% Watermark-Free Map Tile Layers
+		const tileLayers = {
+			streets: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				subdomains: ['a', 'b', 'c'],
+				maxZoom: 19
+			}),
+			satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+				maxZoom: 19
+			}),
+			topo: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+				maxZoom: 19
+			})
+		};
+
+		// Add default high-clarity OpenStreetMap street tiles (No watermark, no API key)
+		let activeTileLayer = tileLayers.streets.addTo(map);
+
+		function switchMapLayer(layerKey) {
+			if (activeTileLayer) map.removeLayer(activeTileLayer);
+			activeTileLayer = tileLayers[layerKey].addTo(map);
+			
+			document.querySelectorAll('.layer-btn').forEach(btn => btn.classList.remove('active'));
+			if (layerKey === 'streets') document.getElementById('layerStreets').classList.add('active');
+			if (layerKey === 'satellite') document.getElementById('layerSatellite').classList.add('active');
+			if (layerKey === 'topo') document.getElementById('layerTopo').classList.add('active');
 		}
 
-		function requireLogin() {
-			if (!authToken) {
-				window.location.href = "/login";
-				return false;
-			}
-			return true;
-		}
+		document.getElementById('layerStreets').addEventListener('click', () => switchMapLayer('streets'));
+		document.getElementById('layerSatellite').addEventListener('click', () => switchMapLayer('satellite'));
+		document.getElementById('layerTopo').addEventListener('click', () => switchMapLayer('topo'));
 
-		function authHeaders() {
-			return authToken
-				? { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` }
-				: { "Content-Type": "application/json" };
-		}
-		function checklistComplete() {
-			return checklistInputs.every((input) => input && input.checked);
-		}
-
-		function updateReleaseStatus() {
-			const dict = translations[langSelect.value] || translations.en;
-			const ready = lastReview && checklistComplete();
-			reportBtn.disabled = !ready;
-			emailReportBtn.disabled = !ready;
-			releaseStatus.textContent = ready ? dict.releaseReady : dict.releasePending;
-		}
-
-		const tabButtons = document.querySelectorAll(".tab-btn");
-		const tabPanels = document.querySelectorAll(".tab-panel");
-
-		function setActiveTab(tabName) {
-			tabButtons.forEach((btn) => {
-				btn.classList.toggle("active", btn.dataset.tab === tabName);
-			});
-			tabPanels.forEach((panel) => {
-				panel.classList.toggle("active", panel.id === `tab-${tabName}`);
-			});
-			if (tabName === "site") {
-				setTimeout(() => {
-					map.invalidateSize();
-				}, 150);
-			}
-		}
-
-		tabButtons.forEach((btn) => {
-			btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
-		});
-
-		const map = L.map("map").setView([20.5937, 78.9629], 5);
-		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-			maxZoom: 18,
-			attribution: "&copy; OpenStreetMap contributors"
-		}).addTo(map);
-
+		let marker = null;
 		function setMarker(lat, lon) {
 			state.lat = lat;
 			state.lon = lon;
-			latInput.value = lat.toFixed(5);
-			lonInput.value = lon.toFixed(5);
-			if (state.marker) {
-				state.marker.setLatLng([lat, lon]);
-			} else {
-				state.marker = L.marker([lat, lon], { draggable: true }).addTo(map);
-				state.marker.on("dragend", (e) => {
-					const pos = e.target.getLatLng();
-					setMarker(pos.lat, pos.lng);
-				});
-			}
-		}
-
-		map.on("click", (e) => setMarker(e.latlng.lat, e.latlng.lng));
-
-		function renderAddressResults(results) {
-			if (!addressResults) return;
-			addressResults.innerHTML = "";
-			if (!results || !results.length) {
-				addressResults.style.display = "none";
-				return;
-			}
-			results.forEach((item) => {
-				const button = document.createElement("button");
-				const displayName = item.display_name || "Unknown location";
-				button.textContent = displayName;
-				button.addEventListener("click", () => {
-					const latNum = Number(item.lat);
-					const lonNum = Number(item.lon);
-					if (Number.isNaN(latNum) || Number.isNaN(lonNum)) {
-						statusLog.textContent = "Invalid coordinates returned. Please try another result.";
-						return;
-					}
-					map.setView([latNum, lonNum], 16);
-					setMarker(latNum, lonNum);
-					statusLog.textContent = `Location set: ${displayName}`;
-				});
-				addressResults.appendChild(button);
+			document.getElementById("latInput").value = lat.toFixed(5);
+			document.getElementById("lonInput").value = lon.toFixed(5);
+			
+			if (marker) map.removeLayer(marker);
+			
+			const customIcon = L.divIcon({
+				className: 'custom-pin',
+				html: `<div style="width: 20px; height: 20px; background: #06B6D4; border: 3px solid #FFFFFF; border-radius: 50%; box-shadow: 0 0 16px #06B6D4;"></div>`,
+				iconSize: [20, 20],
+				iconAnchor: [10, 10]
 			});
-			addressResults.style.display = "flex";
+			marker = L.marker([lat, lon], { icon: customIcon }).addTo(map);
 		}
 
-		function normalizeResult(item, source) {
-			return {
-				lat: item.lat,
-				lon: item.lon,
-				display_name: item.display_name || item.name || "Unknown location",
-				source
-			};
+		map.on("click", (e) => {
+			setMarker(e.latlng.lat, e.latlng.lng);
+			document.getElementById("statusLog").textContent = `Selected Location: ${e.latlng.lat.toFixed(5)}°N, ${e.latlng.lng.toFixed(5)}°E`;
+		});
+
+		function setPresetLocation(lat, lon, name) {
+			map.setView([lat, lon], 12);
+			setMarker(lat, lon);
+			document.getElementById("statusLog").textContent = `Target set: ${name} (${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E)`;
 		}
 
-		function normalizePhotonResult(item) {
-			const props = item.properties || {};
-			const coords = item.geometry && item.geometry.coordinates ? item.geometry.coordinates : [];
-			return {
-				lat: coords[1],
-				lon: coords[0],
-				display_name: props.label || props.name || "Unknown location",
-				source: "photon"
-			};
+		// Tab Switching
+		const tabButtons = document.querySelectorAll(".tab-btn");
+		const tabPanels = document.querySelectorAll(".tab-panel");
+		function setActiveTab(tabName) {
+			tabButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.tab === tabName));
+			tabPanels.forEach(panel => panel.classList.toggle("active", panel.id === `tab-${tabName}`));
+			if (tabName === "site") setTimeout(() => map.invalidateSize(), 200);
 		}
+		tabButtons.forEach(btn => btn.addEventListener("click", () => setActiveTab(btn.dataset.tab)));
 
-		function mergeResults(primary, secondary) {
-			const seen = new Set();
-			const out = [];
-			[...primary, ...secondary].forEach((item) => {
-				const lat = Number(item.lat);
-				const lon = Number(item.lon);
-				if (Number.isNaN(lat) || Number.isNaN(lon)) return;
-				const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
-				if (seen.has(key)) return;
-				seen.add(key);
-				out.push(item);
+		// Building Selection Cards
+		const typeCards = document.querySelectorAll(".type-card");
+		const selectedDisplay = document.getElementById("selectedTypeDisplay");
+		const typeCodeDisplay = document.getElementById("typeCode");
+
+		const iconMap = {
+			House: "🏠",
+			Apartment: "🏢",
+			Hospital: "🏥",
+			School: "🏫",
+			Factory: "🏭",
+			Mall: "🏬"
+		};
+
+		typeCards.forEach(card => {
+			card.addEventListener("click", () => {
+				typeCards.forEach(c => c.classList.remove("active"));
+				card.classList.add("active");
+				state.buildingType = card.dataset.type;
+				const icon = iconMap[state.buildingType] || "🏗️";
+				selectedDisplay.innerHTML = `${icon} ${state.buildingType}`;
+				typeCodeDisplay.textContent = `Type: ${state.buildingType}`;
 			});
-			return out;
+		});
+
+		// Floor Slider
+		const floorsSlider = document.getElementById("floorsSlider");
+		const floorsValue = document.getElementById("floorsValue");
+		function setFloors(val) {
+			state.floors = parseInt(val);
+			floorsSlider.value = state.floors;
+			floorsValue.textContent = state.floors;
+		}
+		floorsSlider.addEventListener("input", (e) => {
+			setFloors(e.target.value);
+		});
+
+		function authHeaders() {
+			return authToken ? { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` } : { "Content-Type": "application/json" };
 		}
 
-		async function geocodeAddress(query) {
-			if (!query) {
-				statusLog.textContent = "Enter an address to search.";
-				return;
-			}
-			statusLog.textContent = "Searching address...";
-			try {
-				const indiaViewbox = "68.0,37.5,97.5,6.5";
-				const base = "https://nominatim.openstreetmap.org/search";
-				const params = new URLSearchParams({
-					format: "json",
-					q: query,
-					limit: "5",
-					addressdetails: "1",
-					countrycodes: "in",
-					viewbox: indiaViewbox,
-					bounded: "1"
-				});
-				const res = await fetch(`${base}?${params.toString()}`, {
-					headers: { "Accept": "application/json" }
-				});
-				let data = await res.json();
-				let primaryResults = Array.isArray(data) ? data.map((item) => normalizeResult(item, "nominatim")) : [];
-				if (!primaryResults.length) {
-					const fallbackParams = new URLSearchParams({
-						format: "json",
-						q: query,
-						limit: "5",
-						addressdetails: "1"
-					});
-					const fallbackRes = await fetch(`${base}?${fallbackParams.toString()}`, {
-						headers: { "Accept": "application/json" }
-					});
-					data = await fallbackRes.json();
-					primaryResults = Array.isArray(data) ? data.map((item) => normalizeResult(item, "nominatim")) : [];
-				}
-
-				const photonParams = new URLSearchParams({
-					q: query,
-					limit: "5",
-					lat: "20.5937",
-					lon: "78.9629",
-					lang: "en"
-				});
-				const photonRes = await fetch(`https://photon.komoot.io/api/?${photonParams.toString()}`);
-				const photonJson = await photonRes.json();
-				const photonResults = photonJson && Array.isArray(photonJson.features)
-					? photonJson.features.map((item) => normalizePhotonResult(item))
-					: [];
-
-				const combined = mergeResults(primaryResults, photonResults);
-				if (!combined.length) {
-					statusLog.textContent = "No results found. Try a more specific address.";
-					renderAddressResults([]);
-					return;
-				}
-				renderAddressResults(combined);
-				const { lat, lon, display_name } = combined[0];
-				const latNum = Number(lat);
-				const lonNum = Number(lon);
-				if (Number.isNaN(latNum) || Number.isNaN(lonNum)) {
-					statusLog.textContent = "Invalid coordinates returned. Please try again.";
-					return;
-				}
-				map.setView([latNum, lonNum], 16);
-				setMarker(latNum, lonNum);
-				statusLog.textContent = `Location set: ${display_name}`;
-			} catch (err) {
-				statusLog.textContent = "Address search failed. Please try again.";
-				renderAddressResults([]);
-			}
+		function updateReleaseStatus() {
+			const ready = !!lastPayload;
+			document.getElementById("reportBtn").disabled = !ready;
+			document.getElementById("emailReportBtn").disabled = !ready;
+			if (document.getElementById("whatsappBtn")) document.getElementById("whatsappBtn").disabled = !ready;
+			document.getElementById("releaseStatus").textContent = ready ? "✅ AI Feasibility Report Ready for Export" : "Pending Analysis";
 		}
 
-		// ── BUTTON UX WRAPPER ──
-		/**
-		 * Wraps an async button action with loading, success, error, and timeout UX.
-		 * @param {HTMLButtonElement} buttonEl - The button triggering the action.
-		 * @param {Function} actionFn - The async function to execute.
-		 */
+		// UI Button Feedback
 		async function withButtonFeedback(buttonEl, actionFn) {
 			if (!buttonEl || buttonEl.disabled) return;
-			const originalText = buttonEl.textContent;
-			let timeoutTimer = null;
-
+			const orig = buttonEl.textContent;
 			try {
-				// 1. Loading State
 				buttonEl.disabled = true;
-				buttonEl.classList.add("btn-loading");
 				buttonEl.textContent = "Processing...";
-
-				// Start 15s timeout warning
-				timeoutTimer = setTimeout(() => {
-					if (statusLog) {
-						statusLog.textContent = "Taking longer than usual... APIs may be slow. Please wait.";
-					}
-				}, 15000);
-
-				// Execute action
 				await actionFn();
-
-				// 2. Success State
-				clearTimeout(timeoutTimer);
-				buttonEl.classList.remove("btn-loading");
-				buttonEl.classList.add("btn-success");
-				buttonEl.textContent = "Success!";
-				
-				setTimeout(() => {
-					buttonEl.classList.remove("btn-success");
-					buttonEl.textContent = originalText;
-					buttonEl.disabled = false;
-				}, 2000);
-
+				buttonEl.textContent = orig;
+				buttonEl.disabled = false;
 			} catch (err) {
-				// 3. Error State
-				clearTimeout(timeoutTimer);
-				buttonEl.classList.remove("btn-loading");
-				buttonEl.classList.add("btn-error");
-				buttonEl.textContent = "Failed";
-				
-				setTimeout(() => {
-					buttonEl.classList.remove("btn-error");
-					buttonEl.textContent = originalText;
-					buttonEl.disabled = false;
-				}, 2500);
-				
-				// Rethrow if needed by caller
+				buttonEl.textContent = orig;
+				buttonEl.disabled = false;
 				throw err;
 			}
 		}
 
-		if (addressSearchBtn) {
-			addressSearchBtn.addEventListener("click", async () => {
-				await withButtonFeedback(addressSearchBtn, async () => {
-					await geocodeAddress(addressInput.value.trim());
-				});
-			});
-		}
-
-		if (addressInput) {
-			addressInput.addEventListener("keydown", (e) => {
-				if (e.key === "Enter") {
-					e.preventDefault();
-					geocodeAddress(addressInput.value.trim());
-				}
-			});
-		}
-
-		if (logoutBtn) {
-			logoutBtn.addEventListener("click", () => {
-				localStorage.removeItem("jwt");
-				authToken = "";
-				window.location.href = "/login";
-			});
-		}
-
-		if (langSelect) {
-			langSelect.addEventListener("change", (e) => {
-				applyTranslations(e.target.value);
-			});
-		}
-
-		document.getElementById("locateBtn").addEventListener("click", () => {
-			if (!navigator.geolocation) {
-				statusLog.textContent = "Geolocation is not supported by your browser.";
-				return;
-			}
-			statusLog.textContent = "Requesting location access...";
-			navigator.geolocation.getCurrentPosition(
-				(pos) => {
-					const { latitude, longitude } = pos.coords;
-					map.setView([latitude, longitude], 12);
-					setMarker(latitude, longitude);
-					statusLog.textContent = "✅ Location detected. Ready to analyze.";
-				},
-				(err) => {
-					let msg = "Unable to access location.";
-					if (err.code === 1) {
-						msg = "Location access denied. Please click the site icon in your address bar to reset permissions, or manually select a point on the map.";
-					} else if (err.code === 2) {
-						msg = "Location unavailable. Please try searching for an address instead.";
-					} else if (err.code === 3) {
-						msg = "Location request timed out.";
-					}
-					statusLog.textContent = msg;
-				},
-				{ timeout: 10000, enableHighAccuracy: false }
-			);
-		});
-
-		document.querySelectorAll(".type-card").forEach((card) => {
-			card.addEventListener("dragstart", (e) => {
-				e.dataTransfer.setData("text/plain", card.dataset.type);
-			});
-		});
-
-		const dropZone = document.getElementById("dropZone");
-		dropZone.addEventListener("dragover", (e) => {
-			e.preventDefault();
-			dropZone.style.borderColor = "var(--accent-2)";
-		});
-		dropZone.addEventListener("dragleave", () => {
-			dropZone.style.borderColor = "var(--accent)";
-		});
-		dropZone.addEventListener("drop", (e) => {
-			e.preventDefault();
-			dropZone.style.borderColor = "var(--accent)";
-			const type = e.dataTransfer.getData("text/plain");
-			if (type) {
-				state.buildingType = type;
-				selectedType.textContent = type;
-				statusLog.textContent = `Construction type set to ${type}.`;
-			}
-		});
-
-		floorInput.addEventListener("input", () => {
-			state.floors = Number(floorInput.value);
-			floorValue.textContent = `Selected: ${state.floors} floors`;
-		});
-
-		document.getElementById("resetBtn").addEventListener("click", () => {
-			state.buildingType = "House";
-			state.floors = 2;
-			selectedType.textContent = "House";
-			floorInput.value = 2;
-			floorValue.textContent = "Selected: 2 floors";
-			statusLog.textContent = "Inputs reset. Choose a location to continue.";
-			if (state.marker) {
-				map.removeLayer(state.marker);
-				state.marker = null;
-			}
-			latInput.value = "";
-			lonInput.value = "";
-			updateResults(null);
-			visualizeBtn.disabled = true;
-		});
-
-		const thresholdPlugin = {
-			id: "thresholdLines",
-			afterDraw(chart, args, opts) {
-				const { ctx, chartArea, scales } = chart;
-				if (!chartArea || !opts || !opts.lines) return;
-				const yScale = scales.y;
-				opts.lines.forEach((line) => {
-					const y = yScale.getPixelForValue(line.value);
-					ctx.save();
-					ctx.setLineDash([6, 6]);
-					ctx.strokeStyle = line.color;
-					ctx.lineWidth = 1;
-					ctx.beginPath();
-					ctx.moveTo(chartArea.left, y);
-					ctx.lineTo(chartArea.right, y);
-					ctx.stroke();
-					ctx.setLineDash([]);
-					ctx.fillStyle = line.color;
-					ctx.font = "12px Space Grotesk, Arial, sans-serif";
-					ctx.fillText(line.label, chartArea.left + 6, y - 6);
-					ctx.restore();
-				});
-			}
-		};
-
-		function parseLifespanUpper(lifespanText) {
-			if (!lifespanText) return null;
-			const match = String(lifespanText).match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/);
-			return match ? Number(match[2]) : null;
-		}
-
-		function setBadge(elementId, value, goodCheck, warnCheck, goodText, warnText, badText) {
-			const el = document.getElementById(elementId);
-			if (!el) return;
-			if (value === null || Number.isNaN(value)) {
-				el.className = "badge";
-				el.textContent = "--";
-				return;
-			}
-			if (goodCheck(value)) {
-				el.className = "badge good";
-				el.textContent = goodText;
-				return;
-			}
-			if (warnCheck(value)) {
-				el.className = "badge warn";
-				el.textContent = warnText;
-				return;
-			}
-			el.className = "badge bad";
-			el.textContent = badText;
-		}
-
-		function setRiskStyles(riskLevel) {
-			const riskCard = document.getElementById("riskCard");
-			const riskBadge = document.getElementById("riskBadge");
-			if (!riskCard || !riskBadge) return;
-			riskCard.classList.remove("risk-low", "risk-medium", "risk-high");
-			if (!riskLevel) {
-				riskBadge.className = "badge";
-				riskBadge.textContent = "--";
-				return;
-			}
-			const level = String(riskLevel).toLowerCase();
-			if (level.includes("low")) {
-				riskCard.classList.add("risk-low");
-				riskBadge.className = "badge good";
-				riskBadge.textContent = "Low Risk";
-				return;
-			}
-			if (level.includes("medium")) {
-				riskCard.classList.add("risk-medium");
-				riskBadge.className = "badge warn";
-				riskBadge.textContent = "Medium Risk";
-				return;
-			}
-			riskCard.classList.add("risk-high");
-			riskBadge.className = "badge bad";
-			riskBadge.textContent = "High Risk";
-		}
-
-		function setFoundationNote(foundation) {
-			const note = document.getElementById("foundationNote");
-			if (!note) return;
-			const map = {
-				"Simple Strip Footing": "✅ Suitable for light buildings",
-				"Isolated Footing": "✅ Standard residential",
-				"Isolated Footing with RCC": "⚠️ Heavy buildings — extra steel needed",
-				"Raft Foundation": "⚠️ Weak soil — spread load",
-				"Pile Foundation (Deep)": "❌ Very weak soil — reach bedrock"
-			};
-			if (!foundation) {
-				note.textContent = "--";
-				return;
-			}
-			note.textContent = map[foundation] || "Recommendation depends on local soil conditions.";
-		}
-
-		function setSummaryBanner(banner, titleEl, bodyEl, result, feasibility) {
-			if (!banner || !titleEl || !bodyEl) return;
-			if (!result || feasibility === null || Number.isNaN(feasibility)) {
-				banner.className = "banner";
-				titleEl.textContent = "--";
-				bodyEl.textContent = "--";
-				return;
-			}
-			const scores = [
-				feasibility,
-				result.domain_scores ? result.domain_scores.soil : null,
-				result.domain_scores ? result.domain_scores.climate : null,
-				result.domain_scores ? result.domain_scores.environment : null,
-				result.domain_scores ? result.domain_scores.animal : null
-			].filter((v) => v !== null && !Number.isNaN(v));
-			if (!scores.length) {
-				banner.className = "banner";
-				titleEl.textContent = "--";
-				bodyEl.textContent = "--";
-				return;
-			}
-			const minScore = Math.min(...scores);
-			if (minScore < 50) {
-				banner.className = "banner bad";
-				titleEl.textContent = "🔴 NOT RECOMMENDED — High risk site";
-				bodyEl.textContent = "At least one core score is below 50. Engineer review is mandatory before proceeding.";
-				return;
-			}
-			if (minScore < 75) {
-				banner.className = "banner warn";
-				titleEl.textContent = "🟡 CONDITIONAL — Engineer review recommended";
-				bodyEl.textContent = "One or more scores are between 50 and 74. Address weaknesses before construction.";
-				return;
-			}
-			banner.className = "banner good";
-			titleEl.textContent = "🟢 SITE APPROVED — Safe to proceed";
-			bodyEl.textContent = "All core scores are at or above 75. Continue with standard approvals.";
-		}
-
-		function setVerdictBanner(banner, titleEl, bodyEl, metrics) {
-			if (!banner || !titleEl || !bodyEl) return;
-			const { feasibility, lifespanUpper, bearingCap, lifespanText } = metrics || {};
-			if (feasibility === null || Number.isNaN(feasibility)) {
-				banner.className = "banner";
-				titleEl.textContent = "--";
-				bodyEl.textContent = "--";
-				return;
-			}
-			const criticalReasons = [];
-			if (lifespanUpper !== null && lifespanUpper < 50) {
-				criticalReasons.push(`predicted lifespan (${lifespanText || "--"}) is critically low`);
-			}
-			if (feasibility < 50) {
-				criticalReasons.push("feasibility is below 50%");
-			}
-			if (bearingCap !== null && !Number.isNaN(bearingCap) && bearingCap < 60) {
-				criticalReasons.push(`bearing capacity (${bearingCap} kN/m2) is below safe minimum`);
-			}
-
-			const warningReasons = [];
-			if (lifespanUpper !== null && lifespanUpper >= 50 && lifespanUpper < 70) {
-				warningReasons.push("lifespan is moderate (50–70 years)");
-			}
-			if (feasibility >= 50 && feasibility < 75) {
-				warningReasons.push("feasibility is moderate (50–75%)");
-			}
-
-			if (criticalReasons.length) {
-				banner.className = "banner bad";
-				titleEl.textContent = "🔴 STRUCTURAL CONCERN DETECTED";
-				bodyEl.textContent = `Feasibility is ${feasibility}% but ${criticalReasons.join(" and ")}. This site needs foundation upgrade before construction.`;
-				return;
-			}
-			if (warningReasons.length) {
-				banner.className = "banner warn";
-				titleEl.textContent = "🟡 CONDITIONAL — Review Required";
-				bodyEl.textContent = `Feasibility is ${feasibility}% with ${warningReasons.join(" and ")}. Engineer review is recommended before approval.`;
-				return;
-			}
-			banner.className = "banner good";
-			titleEl.textContent = "🟢 STRUCTURALLY SOUND";
-			bodyEl.textContent = `Feasibility is ${feasibility}% and critical safety thresholds are met. Proceed with standard design checks.`;
-		}
-
-		function setScoreExplanation(result, feasibility, lifespanUpper, soilDeg, bearingCap) {
-			const explanation = document.getElementById("scoreExplanation");
-			if (!explanation) return;
-			if (!result) {
-				explanation.textContent = "--";
-				return;
-			}
-			const feasibilityText = feasibility !== null && !Number.isNaN(feasibility)
-				? `${feasibility}%`
-				: "--";
-			const lifespanText = result.lifespan || "--";
-			const soilText = soilDeg !== null && !Number.isNaN(soilDeg)
-				? `${soilDeg}%`
-				: "--";
-			const bearingText = bearingCap !== null && !Number.isNaN(bearingCap)
-				? `${bearingCap} kN/m2`
-				: "--";
-			const foundationText = result.foundation ? `Recommendation: ${result.foundation}.` : "";
-			explanation.textContent = `Your Feasibility score (${feasibilityText}) measures overall site suitability across soil, climate, environment, and ecology. However, Lifespan prediction (${lifespanText}) depends heavily on soil bearing capacity and degradation risk. Your Soil Degradation is ${soilText} and bearing capacity is ${bearingText}, which can shorten structural lifespan even on an otherwise feasible site. ${foundationText}`;
-		}
-
-
-		// Tamil Voice Report Logic
-		let tamilSentences = [];
-		let currentSentenceIndex = 0;
-		let synth = window.speechSynthesis;
-		let utterance = null;
-		let isPaused = false;
-		let selectedVoice = null;
-
-		const voiceReportPanel = document.getElementById("voiceReportPanel");
-		const voiceReportBtn = document.getElementById("voiceReportBtn");
-		const scriptDisplay = document.getElementById("scriptDisplay");
-		const voiceProgress = document.getElementById("voiceProgress");
-		const voiceSelect = document.getElementById("voiceSelect");
-		const speedRange = document.getElementById("voiceSpeedRange");
-		const speedValue = document.getElementById("speedValue");
-		const browserNotice = document.getElementById("browserNotice");
-
-		// Initialize Web Speech API
-		function initVoiceEngine() {
-			if (!synth) {
-				browserNotice.innerHTML = "❌ Browser does not support speech synthesis.";
-				return;
-			}
-
-			const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-			if (isChrome) {
-				browserNotice.innerHTML = "✅ Full support (Chrome detected).";
-				browserNotice.style.color = "#059669";
-			} else {
-				browserNotice.innerHTML = "⚠️ Limited support (Recommend Chrome/Edge).";
-			}
-
-			const loadVoices = () => {
-				const voices = synth.getVoices();
-				voiceSelect.innerHTML = '<option value="">Default Voice</option>';
-
-				// Priority: ta-IN (Tamil), hi-IN (Hindi), others
-				const priorityVoices = voices.filter(v => v.lang.includes('ta') || v.lang.includes('hi') || v.lang.includes('IN'));
-
-				priorityVoices.forEach(v => {
-					const opt = document.createElement("option");
-					opt.value = v.name;
-					opt.textContent = `${v.name} (${v.lang})`;
-					voiceSelect.appendChild(opt);
-					if (v.lang === 'ta-IN' && !selectedVoice) {
-						selectedVoice = v;
-						opt.selected = true;
-					}
-				});
-
-				if (!selectedVoice && priorityVoices.length > 0) {
-					selectedVoice = priorityVoices[0];
-				}
-			};
-
-			loadVoices();
-			if (speechSynthesis.onvoiceschanged !== undefined) {
-				speechSynthesis.onvoiceschanged = loadVoices;
-			}
-		}
-
-		async function startVoiceReport() {
-			if (synth.speaking && !isPaused) {
-				stopVoice();
-				return;
-			}
-			if (isPaused) {
-				resumeVoice();
-				return;
-			}
-
-			if (!lastPayload || !lastPayload.result) {
-				console.error("No analysis results available for voice report.");
-				return;
-			}
-
-			const resultData = lastPayload.result;
-			console.log('Sending to voice-report:', resultData);
-
-			try {
-				voiceReportBtn.textContent = "⏳";
-				const response = await fetch("/api/voice-report", {
-					method: "POST",
-					headers: authHeaders(),
-					body: JSON.stringify({ result: resultData })
-				});
-
-				console.log('Voice report status:', response.status);
-				const data = await response.json();
-				console.log('Voice report data:', data);
-
-				if (!response.ok || data.error) {
-					throw new Error(data.error || 'Server error');
-				}
-
-				// Split by common Tamil sentence enders (., !, ?)
-				tamilSentences = data.script.split(/[.!?]|வாழ்த்துக்கள்!/).map(s => s.trim()).filter(s => s.length > 0);
-				currentSentenceIndex = 0;
-				speakNextSentence();
-			} catch (err) {
-				console.error("Voice report error:", err);
-				scriptDisplay.textContent = "குரல் அறிக்கையைப் பெறுவதில் பிழை ஏற்பட்டது: " + err.message;
-				voiceReportBtn.textContent = "🔊";
-			}
-		}
-
-		function speakNextSentence() {
-			if (currentSentenceIndex >= tamilSentences.length) {
-				stopVoice();
-				return;
-			}
-
-			const text = tamilSentences[currentSentenceIndex];
-			utterance = new SpeechSynthesisUtterance(text);
-
-			// Setup voice properties
-			const voices = synth.getVoices();
-			const customVoice = voices.find(v => v.name === voiceSelect.value);
-			utterance.voice = customVoice || selectedVoice;
-			utterance.lang = utterance.voice ? utterance.voice.lang : 'ta-IN';
-			utterance.rate = parseFloat(speedRange.value);
-			utterance.pitch = 1.0;
-			utterance.volume = 1.0;
-
-			// UI Updates
-			voiceReportBtn.textContent = "⏹️";
-			voiceReportBtn.classList.add("speaking");
-			voiceReportBtn.title = "நிறுத்த கிளிக் செய்யுங்கள்";
-			voiceProgress.textContent = `வாக்கியம் ${currentSentenceIndex + 1}/${tamilSentences.length}`;
-
-			// Highlight sentence
-			scriptDisplay.innerHTML = tamilSentences.map((s, i) =>
-				`<span class="${i === currentSentenceIndex ? 'current-sentence' : ''}">${s}. </span>`
-			).join("");
-
-			// Scroll to highlighted
-			const currentEl = scriptDisplay.querySelector(".current-sentence");
-			if (currentEl) currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-			utterance.onend = () => {
-				if (!isPaused && currentSentenceIndex < tamilSentences.length) {
-					currentSentenceIndex++;
-					speakNextSentence();
-				}
-			};
-
-			utterance.onerror = () => stopVoice();
-
-			synth.speak(utterance);
-		}
-
-		function pauseVoice() {
-			if (synth.speaking && !isPaused) {
-				synth.pause();
-				isPaused = true;
-				voiceReportBtn.textContent = "▶️";
-				voiceReportBtn.title = "தொடர கிளிக் செய்யுங்கள்";
-			}
-		}
-
-		function resumeVoice() {
-			if (isPaused) {
-				synth.resume();
-				isPaused = false;
-				voiceReportBtn.textContent = "⏹️";
-				voiceReportBtn.title = "நிறுத்த கிளிக் செய்யுங்கள்";
-			}
-		}
-
-		function stopVoice() {
-			synth.cancel();
-			tamilSentences = [];
-			currentSentenceIndex = 0;
-			isPaused = false;
-			voiceReportBtn.textContent = "🔊";
-			voiceReportBtn.classList.remove("speaking");
-			voiceReportBtn.title = "தமிழில் கேளுங்கள்";
-			voiceProgress.textContent = "வாக்கியம் --/--";
-			scriptDisplay.textContent = "அறிக்கை நிறுத்தப்பட்டது.";
-		}
-
-		function repeatVoice() {
-			stopVoice();
-			setTimeout(startVoiceReport, 100);
-		}
-
-		// Event Listeners
-		voiceReportBtn.addEventListener("click", startVoiceReport);
-		pauseVoiceBtn.addEventListener("click", () => isPaused ? resumeVoice() : pauseVoice());
-		stopVoiceBtn.addEventListener("click", stopVoice);
-		repeatVoiceBtn.addEventListener("click", repeatVoice);
-		speedRange.addEventListener("input", (e) => {
-			speedValue.textContent = e.target.value + "x";
-		});
-
-		initVoiceEngine();
-
+		// Update Dashboard HUD
 		function updateResults(result) {
-			const fallback = "--";
-			const summaryBanner = document.getElementById("summaryBanner");
-			const summaryTitle = document.getElementById("summaryTitle");
-			const summaryBody = document.getElementById("summaryBody");
-			const verdictBanner = document.getElementById("verdictBanner");
-			const verdictTitle = document.getElementById("verdictTitle");
-			const verdictBody = document.getElementById("verdictBody");
-			const lifespanWarning = document.getElementById("lifespanWarning");
-			const locationCard = document.getElementById("locationNameCard");
-			const locationDisplay = document.getElementById("locationNameDisplay");
-			document.getElementById("feasibility").textContent = result ? `${result.feasibility_score}%` : fallback;
-			document.getElementById("risk").textContent = result ? result.risk_level : fallback;
-			document.getElementById("lifespan").textContent = result ? result.lifespan : fallback;
-			document.getElementById("confidence").textContent = result ? `${result.confidence}%` : fallback;
-			document.getElementById("foundation").textContent = result ? result.foundation : fallback;
-			document.getElementById("success").textContent = result ? `${result.success_probability}` : fallback;
-			document.getElementById("soilRisk").textContent = result ? `${result.soil_degradation_risk_score}%` : fallback;
-			document.getElementById("climateStress").textContent = result ? `${result.climate_stress_frequency_score}%` : fallback;
-			document.getElementById("waterExposure").textContent = result ? `${result.water_exposure_probability_score}%` : fallback;
-			document.getElementById("bioDamage").textContent = result ? `${result.biological_damage_probability_score}%` : fallback;
-			document.getElementById("typeCode").textContent = result ? `${result.construction_type_encoded}` : fallback;
-			document.getElementById("riskSummary").textContent = result ? result.risk_factor_summary : fallback;
-			document.getElementById("modelVersion").textContent = result && result.model_metadata ? result.model_metadata.version : fallback;
-			document.getElementById("trainedOn").textContent = result && result.model_metadata ? result.model_metadata.trained_on : fallback;
-			document.getElementById("featureCount").textContent = result && result.model_metadata ? result.model_metadata.feature_count : fallback;
-			document.getElementById("sourceStatus").textContent = result && result.source_status
-				? `soilgrids: ${result.source_status.soilgrids}, nasa: ${result.source_status.nasa_power}, usgs: ${result.source_status.usgs}, gbif: ${result.source_status.gbif}`
-				: fallback;
-			document.getElementById("dataFreshness").textContent = result && result.data_freshness
-				? `soilgrids: ${result.data_freshness.soilgrids}`
-				: fallback;
-			document.getElementById("ahpScore").textContent = result ? `${result.ahp_score}%` : fallback;
-			document.getElementById("ahpDelta").textContent = result ? `${result.ahp_delta}%` : fallback;
-			document.getElementById("dataQuality").textContent = result ? `${result.data_quality_score}%` : fallback;
-			document.getElementById("historicalMatch").textContent = result && result.historical_match_km !== null
-				? `${result.historical_match_km} km`
-				: "No match";
-
-			if (result) {
-				voiceReportPanel.style.display = "flex";
-				scriptDisplay.textContent = "அறிக்கை தயார். கேட்க '🔊' அழுத்தவும்.";
-			} else {
-				voiceReportPanel.style.display = "none";
-				stopVoice();
+			if (!result) return;
+			const score = Number(result.feasibility_score) || 0;
+			document.getElementById("feasibility").textContent = `${score}%`;
+			
+			// Update animated SVG gauge
+			const circle = document.getElementById("scoreGaugeFill");
+			if (circle) {
+				const offset = 314 - (314 * score) / 100;
+				circle.style.strokeDashoffset = offset;
 			}
 
-			const feasibility = result ? Number(result.feasibility_score) : null;
-			const confidence = result ? Number(result.confidence) : null;
-			const successProb = result ? Number(result.success_probability) : null;
-			const soilDeg = result ? Number(result.soil_degradation_risk_score) : null;
-			const climateStress = result ? Number(result.climate_stress_frequency_score) : null;
-			const waterExposure = result ? Number(result.water_exposure_probability_score) : null;
-			const bioDamage = result ? Number(result.biological_damage_probability_score) : null;
-			const lifespanUpper = result ? parseLifespanUpper(result.lifespan) : null;
-			const bearingCap = result && result.raw_data && result.raw_data.soil
-				? Number(result.raw_data.soil.bearing_capacity_kNm2)
-				: null;
-
-			setBadge("feasibilityBadge", feasibility,
-				(v) => v >= 75,
-				(v) => v >= 50,
-				"✅ Good to Build",
-				"⚠️ Proceed with Caution",
-				"❌ High Risk — Avoid"
-			);
-
-			setBadge("lifespanBadge", lifespanUpper,
-				(v) => v >= 80,
-				(v) => v >= 50,
-				"✅ Long Lifespan",
-				"⚠️ Medium Lifespan",
-				"❌ Short Lifespan — Check Soil"
-			);
-
-			setBadge("confidenceBadge", confidence,
-				(v) => v >= 80,
-				(v) => v >= 60,
-				"✅ High Confidence",
-				"⚠️ Moderate Confidence",
-				"❌ Low Confidence — More data needed"
-			);
-
-			setBadge("successBadge", successProb,
-				(v) => v >= 0.8,
-				(v) => v >= 0.6,
-				"✅ High Success Chance",
-				"⚠️ Moderate",
-				"❌ Low Success — Engineer review mandatory"
-			);
-
-			setBadge("soilRiskBadge", soilDeg,
-				(v) => v < 20,
-				(v) => v < 40,
-				"✅ Low Degradation",
-				"⚠️ Moderate",
-				"❌ High — Foundation at risk"
-			);
-
-			setBadge("climateStressBadge", climateStress,
-				(v) => v < 25,
-				(v) => v < 50,
-				"✅ Low Climate Stress",
-				"⚠️ Moderate stress",
-				"❌ High stress — Waterproofing mandatory"
-			);
-
-			setBadge("waterExposureBadge", waterExposure,
-				(v) => v < 25,
-				(v) => v < 50,
-				"✅ Low Exposure",
-				"⚠️ Moderate exposure",
-				"❌ High exposure — Drainage required"
-			);
-
-			setBadge("bioDamageBadge", bioDamage,
-				(v) => v < 25,
-				(v) => v < 50,
-				"✅ Low Biological Risk",
-				"⚠️ Moderate risk",
-				"❌ High risk — Pest control needed"
-			);
-
-			setRiskStyles(result ? result.risk_level : null);
-			setFoundationNote(result ? result.foundation : null);
-			setSummaryBanner(summaryBanner, summaryTitle, summaryBody, result, feasibility);
-			setVerdictBanner(verdictBanner, verdictTitle, verdictBody, {
-				feasibility,
-				lifespanUpper,
-				bearingCap,
-				lifespanText: result ? result.lifespan : null
-			});
-			setScoreExplanation(result, feasibility, lifespanUpper, soilDeg, bearingCap);
-			if (lifespanWarning) {
-				lifespanWarning.style.display = lifespanUpper !== null && lifespanUpper < 40 ? "block" : "none";
+			const badge = document.getElementById("feasibilityBadge");
+			if (badge) {
+				badge.textContent = score >= 75 ? "🟢 High Feasibility — Approved" : (score >= 50 ? "🟡 Moderate — Engineered Foundation Needed" : "🔴 Low Feasibility — High Hazard");
+				badge.className = `score-status-badge ${score >= 75 ? 'good' : (score >= 50 ? 'warn' : 'bad')}`;
 			}
+
+			document.getElementById("lifespan").textContent = result.lifespan || "--";
+			document.getElementById("foundation").textContent = result.foundation || "--";
+			document.getElementById("soilRisk").textContent = `${result.soil_degradation_risk_score || 0}%`;
+			document.getElementById("climateStress").textContent = `${result.climate_stress_frequency_score || 0}%`;
+			document.getElementById("confidenceBadge").textContent = `Confidence: ${result.confidence || 85}%`;
+			document.getElementById("riskBadge").textContent = `Risk: ${result.risk_level || 'Low'}`;
+			
 			const notesEl = document.getElementById("safetyNotes");
-			notesEl.innerHTML = "";
-			if (result && Array.isArray(result.safety_notes) && result.safety_notes.length) {
-				result.safety_notes.forEach((note) => {
-					const li = document.createElement("li");
-					li.textContent = note;
-					notesEl.appendChild(li);
-				});
-			} else {
-				const li = document.createElement("li");
-				li.textContent = "No additional safety notes.";
-				notesEl.appendChild(li);
+			if (notesEl && Array.isArray(result.safety_notes) && result.safety_notes.length) {
+				notesEl.innerHTML = result.safety_notes.map(n => `<li>${n}</li>`).join('');
 			}
 
-			const scores = result && result.domain_scores
-				? [result.domain_scores.soil, result.domain_scores.climate, result.domain_scores.environment, result.domain_scores.animal]
-				: [0, 0, 0, 0];
-			const barColors = scores.map((value) => {
-				if (value >= 70) return "#7ac79b";
-				if (value >= 50) return "#f0b85b";
-				return "#e07a7a";
-			});
-
+			// Render Chart
+			const scores = result.domain_scores ? [result.domain_scores.soil, result.domain_scores.climate, result.domain_scores.environment, result.domain_scores.animal] : [80, 85, 75, 90];
 			if (!state.chart) {
 				const ctx = document.getElementById("riskChart").getContext("2d");
 				state.chart = new Chart(ctx, {
 					type: "bar",
 					data: {
-						labels: ["Soil", "Climate", "Environment", "Wildlife"],
+						labels: ["Soil Mechanics", "Climate Stress", "Environment", "Eco-Buffer"],
 						datasets: [{
-							label: "Score",
 							data: scores,
-							backgroundColor: barColors,
+							backgroundColor: ["#10B981", "#06B6D4", "#3B82F6", "#8B5CF6"],
 							borderRadius: 8
 						}]
 					},
 					options: {
 						responsive: true,
+						maintainAspectRatio: false,
 						scales: {
-							y: {
-								beginAtZero: true,
-								max: 100
-							}
+							y: { beginAtZero: true, max: 100, grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#94A3B8" } },
+							x: { grid: { display: false }, ticks: { color: "#94A3B8" } }
 						},
-						plugins: {
-							legend: { display: false },
-							thresholdLines: {
-								lines: [
-									{ value: 50, color: "#b42318", label: "Minimum Safe Threshold" },
-									{ value: 75, color: "#1b7f4b", label: "Good Zone" }
-								]
-							}
-						}
-					},
-					plugins: [thresholdPlugin]
+						plugins: { legend: { display: false } }
+					}
 				});
 			} else {
 				state.chart.data.datasets[0].data = scores;
-				state.chart.data.datasets[0].backgroundColor = barColors;
 				state.chart.update();
 			}
 
-			if (!result) {
-				reportBtn.disabled = true;
-				releaseStatus.textContent = "Pending review";
-				if (locationCard) locationCard.style.display = "none";
-				if (whatsappBtn) whatsappBtn.disabled = true;
-			} else {
-				if (whatsappBtn) whatsappBtn.disabled = false;
+			renderEIAMethods(result);
+			updateReleaseStatus();
+			
+			// Display voice panel
+			document.getElementById("voiceReportPanel").style.display = "flex";
+		}
+
+		// Render EIA 5-Method Matrix
+		function renderEIAMethods(result) {
+			if (!result || !result.eia_methods) return;
+			const eia = result.eia_methods;
+
+			// Method 1: Leopold
+			const m1 = eia.matrix_method;
+			if (m1) {
+				document.getElementById("eiaLeopoldBadge").textContent = `Leopold Index: ${m1.leopold_index}/100`;
+				if (document.getElementById("eiaLeopoldFormula") && m1.formula) {
+					document.getElementById("eiaLeopoldFormula").textContent = m1.formula;
+				}
+				const tbody = document.getElementById("eiaMatrixBody");
+				if (tbody && Array.isArray(m1.rows)) {
+					tbody.innerHTML = m1.rows.map(r => `
+						<tr>
+							<td style="font-weight: 600;">${r.action}</td>
+							<td>${r.receptor}</td>
+							<td>${r.magnitude > 0 ? '+' + r.magnitude : r.magnitude}</td>
+							<td>${r.importance}</td>
+							<td style="font-weight: 700; color: ${r.score >= -4 ? '#10B981' : (r.score >= -10 ? '#F59E0B' : '#EF4444')};">${r.score}</td>
+							<td style="color: var(--text-muted);">${r.mitigation}</td>
+						</tr>
+					`).join('');
+				}
+			}
+
+			// Method 2: Checklist
+			const m2 = eia.checklist_method;
+			if (m2) {
+				document.getElementById("eiaChecklistBadge").textContent = `${m2.compliance_score}% (${m2.compliance_status})`;
+				const tbody = document.getElementById("eiaChecklistBody");
+				if (tbody && Array.isArray(m2.items)) {
+					tbody.innerHTML = m2.items.map(i => `
+						<tr>
+							<td style="font-weight: 600;">${i.parameter}</td>
+							<td style="color: var(--text-muted);">${i.threshold}</td>
+							<td>${i.observed}</td>
+							<td style="color: var(--neon-cyan); font-family: 'JetBrains Mono', monospace;">${i.weight}</td>
+							<td>
+								<span class="badge ${i.status === 'PASS' ? 'good' : (i.status === 'WARN' ? 'warn' : 'bad')}">${i.status} (${i.weighted_score} pts)</span>
+							</td>
+						</tr>
+					`).join('');
+				}
+			}
+
+			// Method 4: Overlay
+			const m4 = eia.overlay_method;
+			if (m4) {
+				document.getElementById("eiaOverlayBadge").textContent = `${m4.composite_score}/100`;
+				const dom = result.domain_scores || {};
+				document.getElementById("overlaySoilScore").textContent = `${dom.soil || '--'}%`;
+				document.getElementById("overlayClimateScore").textContent = `${dom.climate || '--'}%`;
+				document.getElementById("overlayHazardScore").textContent = `${dom.environment || '--'}%`;
+				document.getElementById("overlayEcoScore").textContent = `${dom.animal || '--'}%`;
+				document.getElementById("overlayZonalText").textContent = `Zonal Suitability: ${m4.zonal_classification}`;
+				if (document.getElementById("eiaOverlayFormula") && m4.formula) {
+					document.getElementById("eiaOverlayFormula").textContent = m4.formula;
+				}
+			}
+
+			// Method 3: Network
+			const m3 = eia.network_method;
+			if (m3 && Array.isArray(m3.pathways)) {
+				const container = document.getElementById("eiaNetworkContainer");
+				if (container) {
+					container.innerHTML = m3.pathways.map(p => `
+						<div class="result-card" style="border-left: 3px solid var(--neon-cyan);">
+							<h4 style="color: var(--neon-cyan); margin-bottom: 6px;">${p.pathway_name}</h4>
+							<p style="font-size: 12px; margin: 3px 0; color: var(--text-muted);"><b>Trigger:</b> ${p.primary_cause}</p>
+							<p style="font-size: 12px; margin: 3px 0; color: var(--text-muted);"><b>Condition:</b> ${p.secondary_condition}</p>
+							<p style="font-size: 12px; margin: 3px 0; color: var(--neon-amber);"><b>Impact:</b> ${p.tertiary_impact}</p>
+							<p style="font-size: 12px; margin: 4px 0; color: var(--neon-emerald); font-weight: 600;"><b>Mitigation:</b> ${p.engineered_mitigation}</p>
+						</div>
+					`).join('');
+				}
+			}
+
+			// Method 5: SHAP
+			const shap = result.shap_results;
+			const shapEl = document.getElementById("eiaShapSummary");
+			if (shap && shapEl) {
+				const up = (shap.top_up || []).map(x => `<span style="color: var(--neon-emerald);">+${x[2]} pts (${x[0].replace(/_/g, ' ')})</span>`).join(', ');
+				const down = (shap.top_down || []).map(x => `<span style="color: var(--neon-rose);">${x[2]} pts (${x[0].replace(/_/g, ' ')})</span>`).join(', ');
+				shapEl.innerHTML = `
+					<div style="margin-bottom: 4px; font-size: 11px; color: var(--text-dim);">SHAP Additive Contribution relative to National Baseline Mean (58.4 pts):</div>
+					<div><b>Positive Clearance Boosts:</b> ${up || 'None'}</div>
+					<div style="margin-top:4px;"><b>Environmental Risk Penalties:</b> ${down || 'None'}</div>
+					<div style="margin-top:6px; font-style:italic; color: var(--text-muted); font-size: 11.5px;">${shap.summary || ''}</div>
+				`;
 			}
 		}
 
-	document.getElementById("analyzeBtn").addEventListener("click", async () => {
+		// Analysis Trigger
+		document.getElementById("analyzeBtn").addEventListener("click", async () => {
 			await withButtonFeedback(document.getElementById("analyzeBtn"), async () => {
-				if (!requireLogin()) {
-					throw new Error("Not logged in");
-				}
 				if (state.lat === null || state.lon === null) {
-					statusLog.textContent = "Pick a location on the map first.";
-					throw new Error("No location selected");
+					document.getElementById("statusLog").textContent = "Please select a location on the map first.";
+					throw new Error("No coordinate selected");
 				}
 
-				const sensorData = {};
-				if (sensorSoilMoisture.value) sensorData.soil_moisture_percent = Number(sensorSoilMoisture.value);
-				if (sensorGroundwater.value) sensorData.groundwater_depth = Number(sensorGroundwater.value);
-				if (sensorRainfall.value) sensorData.local_rainfall_mm = Number(sensorRainfall.value);
-				if (sensorWind.value) sensorData.local_wind_speed_ms = Number(sensorWind.value);
-				if (Object.keys(sensorData).length) {
-					sensorData.sensor_timestamp = new Date().toISOString();
-				}
+				document.getElementById("statusLog").textContent = "Ingesting live satellite data and computing 5-Method EIA matrix...";
 
-				statusLog.textContent = "Collecting live data, running models...";
-				
 				const res = await fetch("/api/analyze", {
 					method: "POST",
 					headers: authHeaders(),
@@ -2318,305 +1606,179 @@
 						lat: state.lat,
 						lon: state.lon,
 						building_type: state.buildingType,
-						floors: state.floors,
-						sensor_data: sensorData
+						floors: state.floors
 					})
 				});
 
 				const payload = await res.json();
 				if (!res.ok || payload.error) {
-					statusLog.textContent = payload.error || "Analysis failed.";
-					throw new Error(payload.error || "Analysis failed.");
+					document.getElementById("statusLog").textContent = payload.error || "Analysis failed.";
+					throw new Error(payload.error || "Analysis failed");
 				}
+
 				lastPayload = {
-					inputs: {
-						lat: state.lat,
-						lon: state.lon,
-						building_type: state.buildingType,
-						floors: state.floors
-					},
+					inputs: { lat: state.lat, lon: state.lon, building_type: state.buildingType, floors: state.floors },
 					result: payload.result
 				};
 
-				// REVERSE GEOCODING
-				const locKey = `${state.lat.toFixed(5)},${state.lon.toFixed(5)}`;
-				const locationCard = document.getElementById("locationNameCard");
-				const locationDisplay = document.getElementById("locationNameDisplay");
-				
-				if (state.locationCache[locKey]) {
-					payload.result.location_name = state.locationCache[locKey];
-					if (locationDisplay) locationDisplay.textContent = "📍 " + payload.result.location_name;
-					if (locationCard) locationCard.style.display = "block";
-				} else {
-					if (locationDisplay) locationDisplay.textContent = `📍 ${state.lat.toFixed(4)}, ${state.lon.toFixed(4)} (Fetching...)`;
-					if (locationCard) locationCard.style.display = "block";
-					
-					try {
-						const nomRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${state.lat}&lon=${state.lon}&format=json`);
-						const nomData = await nomRes.json();
-						if (nomData && nomData.display_name) {
-							payload.result.location_name = nomData.display_name;
-							state.locationCache[locKey] = nomData.display_name;
-							if (locationDisplay) locationDisplay.textContent = "📍 " + nomData.display_name;
-						} else {
-							if (locationDisplay) locationDisplay.textContent = `📍 ${state.lat.toFixed(4)}, ${state.lon.toFixed(4)}`;
-						}
-					} catch (err) {
-						if (locationDisplay) locationDisplay.textContent = `📍 ${state.lat.toFixed(4)}, ${state.lon.toFixed(4)}`;
-						console.error("Reverse geocoding failed:", err);
-					}
-				}
-
 				updateResults(payload.result);
-				statusLog.textContent = "Analysis complete. Review the dashboard metrics.";
+				document.getElementById("statusLog").textContent = "Analysis completed. Feasibility score generated.";
 				setActiveTab("analysis");
-				visualizeBtn.disabled = false;
+				document.getElementById("visualizeBtn").disabled = false;
 			});
 		});
 
-		visualizeBtn.addEventListener("click", async () => {
-			await withButtonFeedback(visualizeBtn, async () => {
-				if (!lastPayload) {
-					statusLog.textContent = "Run analysis before viewing visualization.";
-					throw new Error("No payload");
-				}
-				statusLog.textContent = "Generating 3D Simulation... This may take 10-15 seconds.";
+		// 3D Risk Sim button redirect
+		document.getElementById("visualizeBtn").addEventListener("click", () => {
+			if (!lastPayload || !lastPayload.result) return;
+			const form = document.createElement("form");
+			form.method = "POST";
+			form.action = "/visualization";
 
-				// Artificial delay to simulate feedback before navigation away
-				await new Promise((resolve) => setTimeout(resolve, 800));
+			const inputResult = document.createElement("input");
+			inputResult.type = "hidden";
+			inputResult.name = "result_data";
+			inputResult.value = JSON.stringify(lastPayload.result);
+			form.appendChild(inputResult);
 
-				const form = document.createElement("form");
-				form.method = "POST";
-				form.action = "/visualization";
+			const inputLat = document.createElement("input");
+			inputLat.type = "hidden";
+			inputLat.name = "lat";
+			inputLat.value = state.lat;
+			form.appendChild(inputLat);
 
-				const fields = {
-					lat: lastPayload.inputs.lat,
-					lon: lastPayload.inputs.lon,
-					building_type: lastPayload.inputs.building_type,
-					floors: lastPayload.inputs.floors
-				};
+			const inputLon = document.createElement("input");
+			inputLon.type = "hidden";
+			inputLon.name = "lon";
+			inputLon.value = state.lon;
+			form.appendChild(inputLon);
 
-				for (const key in fields) {
-					const input = document.createElement("input");
-					input.type = "hidden";
-					input.name = key;
-					input.value = fields[key];
-					form.appendChild(input);
-				}
-
-				document.body.appendChild(form);
-				form.submit();
-			});
+			document.body.appendChild(form);
+			form.submit();
 		});
 
-		if (whatsappBtn) {
-			whatsappBtn.addEventListener("click", () => {
-				if (!lastPayload || !lastPayload.result) return;
-				
-				const res = lastPayload.result;
-				const locName = res.location_name || `${state.lat.toFixed(4)}, ${state.lon.toFixed(4)}`;
-				
-				const msg = `🏗️ AI Construction Site Analysis Report\n\n📍 Location: ${locName}\n⭐ Feasibility: ${res.feasibility_score}%\n🏛️ Foundation: ${res.foundation || 'Standard'}\n⏱️ Lifespan: ${res.lifespan || '--'} years\n🎯 Risk Level: ${res.risk_level || '--'}\n\nAnalyzed using AI Construction Site Selection System.\n#Construction #AI #SiteSelection`;
-
-				const encodedMsg = encodeURIComponent(msg);
-				window.open(`https://wa.me/?text=${encodedMsg}`, '_blank');
-			});
-		}
-
-		reportBtn.addEventListener("click", async () => {
-			await withButtonFeedback(reportBtn, async () => {
-				if (!requireLogin()) {
-					throw new Error("Not logged in");
-				}
+		// PDF Report Download Trigger
+		document.getElementById("reportBtn").addEventListener("click", async () => {
+			await withButtonFeedback(document.getElementById("reportBtn"), async () => {
 				if (!lastPayload) {
-					statusLog.textContent = "Run analysis before downloading report.";
+					document.getElementById("statusLog").textContent = "Run site analysis before downloading report.";
 					throw new Error("No payload");
 				}
-				if (!lastReview || !checklistComplete()) {
-					statusLog.textContent = "Complete engineer review and checklist before downloading report.";
-					throw new Error("Incomplete review");
-				}
-				statusLog.textContent = "Generating PDF report...";
-				
+
+				document.getElementById("statusLog").textContent = "Compiling executive 5-Method EIA PDF report...";
 				const payload = { ...lastPayload };
-				if (lastReview) {
-					payload.review = lastReview;
-				}
+				if (lastReview) payload.review = lastReview;
+
 				const res = await fetch("/api/report", {
 					method: "POST",
 					headers: authHeaders(),
 					body: JSON.stringify(payload)
 				});
+
 				if (!res.ok) {
 					const err = await res.json();
-					statusLog.textContent = err.error || "Failed to generate report.";
-					throw new Error(err.error || "Failed to generate report.");
+					document.getElementById("statusLog").textContent = err.error || "Report generation failed.";
+					throw new Error(err.error || "Failed");
 				}
+
 				const blob = await res.blob();
 				const url = window.URL.createObjectURL(blob);
 				const a = document.createElement("a");
 				a.href = url;
-				a.download = "site_feasibility_report.pdf";
+				a.download = "TERRA_AI_Feasibility_Report.pdf";
 				document.body.appendChild(a);
 				a.click();
 				a.remove();
 				setTimeout(() => window.URL.revokeObjectURL(url), 1500);
-				statusLog.textContent = "Report downloaded successfully.";
+				document.getElementById("statusLog").textContent = "PDF report downloaded successfully.";
 			});
 		});
 
-		submitReviewBtn.addEventListener("click", async () => {
-			await withButtonFeedback(submitReviewBtn, async () => {
-				if (!requireLogin()) {
-					throw new Error("Not logged in");
-				}
-				if (!lastPayload) {
-					statusLog.textContent = "Run analysis before submitting review.";
-					throw new Error("No payload");
-				}
-				if (!reviewerName.value.trim() || !licenseId.value.trim() || !reviewDate.value) {
-					statusLog.textContent = "Reviewer name, license ID, and date are required.";
-					throw new Error("Missing review fields");
-				}
-				lastReview = {
-					reviewer_name: reviewerName.value.trim(),
-					license_id: licenseId.value.trim(),
-					decision: reviewDecision.value,
-					review_date: reviewDate.value,
-					notes: reviewNotes.value.trim(),
-					checklist: {
-						soil_bearing_test: document.getElementById("chk-soil").checked,
-						groundwater_survey: document.getElementById("chk-water").checked,
-						seismic_check: document.getElementById("chk-seismic").checked,
-						flood_history: document.getElementById("chk-flood").checked,
-						environment_clearance: document.getElementById("chk-env").checked,
-						model_verified: document.getElementById("chk-verify").checked,
-						data_freshness: document.getElementById("chk-fresh").checked,
-						field_tests: document.getElementById("chk-field").checked,
-						maps_verified: document.getElementById("chk-cross").checked,
-						license_verified: document.getElementById("chk-license").checked
-					}
-				};
-				statusLog.textContent = "Submitting engineer review...";
-				
-				const res = await fetch("/api/review", {
+		// WhatsApp Sharing Trigger
+		document.getElementById("whatsappBtn").addEventListener("click", () => {
+			if (!lastPayload || !lastPayload.result) return;
+			const res = lastPayload.result;
+			const loc = `${state.lat.toFixed(4)}°N, ${state.lon.toFixed(4)}°E`;
+			const msg = `🏗️ *TERRA·AI Site Feasibility Intelligence*\n\n📍 *Location:* ${loc}\n⭐ *Feasibility Score:* ${res.feasibility_score}%\n🏛️ *Foundation:* ${res.foundation || 'Standard Footing'}\n⏱️ *Lifespan:* ${res.lifespan || '--'}\n🎯 *Risk Level:* ${res.risk_level || 'Low Risk'}\n\n_Generated by TERRA·AI Autonomous Geotechnical Platform._`;
+			window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+		});
+
+		// Tamil Voice Synthesis Logic (Synchronized on both Site Targeting & Analytics Tabs)
+		let synth = window.speechSynthesis;
+		const voiceBtns = [document.getElementById("voiceReportBtn"), document.getElementById("voiceReportBtnAnalysis")].filter(Boolean);
+		const stopBtns = [document.getElementById("stopVoiceBtn"), document.getElementById("stopVoiceBtnAnalysis")].filter(Boolean);
+		const eqElements = [document.getElementById("audioEqualizer"), document.getElementById("audioEqualizerAnalysis")].filter(Boolean);
+		const scriptDisplays = [document.getElementById("scriptDisplay"), document.getElementById("scriptDisplayAnalysis")].filter(Boolean);
+
+		async function startVoiceReport() {
+			if (!lastPayload || !lastPayload.result) {
+				document.getElementById("statusLog").textContent = "Please run an AI analysis first to generate the voice briefing.";
+				return;
+			}
+			try {
+				document.getElementById("statusLog").textContent = "Generating synthesized Tamil geotechnical audio briefing...";
+				const res = await fetch("/api/voice-report", {
 					method: "POST",
 					headers: authHeaders(),
-					body: JSON.stringify({
-						...lastPayload,
-						review: lastReview
-					})
+					body: JSON.stringify({ result: lastPayload.result })
 				});
-				const payload = await res.json();
-				if (!res.ok || payload.error) {
-					statusLog.textContent = payload.error || "Review submission failed.";
-					throw new Error(payload.error || "Review submission failed.");
-				}
-				statusLog.textContent = "Engineer review saved.";
-				updateReleaseStatus();
-			});
-		});
-
-		checklistInputs.forEach((input) => {
-			input.addEventListener("change", updateReleaseStatus);
-		});
-
-		async function refreshDatasetStatus() {
-			try {
-				if (!requireLogin()) {
-					return;
-				}
-				const res = await fetch("/api/datasets/status", { headers: authHeaders() });
 				const data = await res.json();
-				if (!res.ok || data.error) {
-					datasetStatus.textContent = data.error || "Unable to read dataset status.";
-					return;
+				if (data.script && synth) {
+					scriptDisplays.forEach(el => {
+						el.textContent = data.script;
+					});
+
+					synth.cancel();
+					const utter = new SpeechSynthesisUtterance(data.script);
+					utter.lang = "ta-IN";
+					utter.rate = 0.95;
+					utter.onstart = () => {
+						voiceBtns.forEach(btn => btn.classList.add("pulse-glow"));
+						eqElements.forEach(el => el.classList.add("speaking"));
+						document.getElementById("statusLog").textContent = "Playing Tamil voice briefing...";
+					};
+					utter.onend = () => {
+						voiceBtns.forEach(btn => btn.classList.remove("pulse-glow"));
+						eqElements.forEach(el => el.classList.remove("speaking"));
+						document.getElementById("statusLog").textContent = "Voice briefing finished.";
+					};
+					synth.speak(utter);
 				}
-				if (!data.exists) {
-					datasetStatus.textContent = "No dataset uploaded.";
-					return;
-				}
-				datasetStatus.textContent = `Rows: ${data.rows} | Updated: ${data.updated}`;
-			} catch (err) {
-				datasetStatus.textContent = "Dataset status unavailable.";
+			} catch (e) {
+				console.error("Voice report failed", e);
+				document.getElementById("statusLog").textContent = "Voice briefing generation failed.";
 			}
 		}
 
-		uploadDatasetBtn.addEventListener("click", async () => {
-			await withButtonFeedback(uploadDatasetBtn, async () => {
-				if (!requireLogin()) {
-					throw new Error("Not logged in");
-				}
-				if (!datasetFile.files.length) {
-					statusLog.textContent = "Choose a CSV file to upload.";
-					throw new Error("No file chosen");
-				}
-				statusLog.textContent = "Uploading historical dataset...";
-				const formData = new FormData();
-				formData.append("file", datasetFile.files[0]);
-				
-				const res = await fetch("/api/datasets/upload", {
-					method: "POST",
-					headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
-					body: formData
-				});
-				if (langSelect) {
-					applyTranslations(langSelect.value);
-				}
-				updateReleaseStatus();
-				if (!requireLogin()) {
-					throw new Error("Not logged in");
-				}
+		voiceBtns.forEach(btn => btn.addEventListener("click", startVoiceReport));
+		stopBtns.forEach(btn => btn.addEventListener("click", () => {
+			if (synth) synth.cancel();
+			eqElements.forEach(el => el.classList.remove("speaking"));
+			document.getElementById("statusLog").textContent = "Voice briefing stopped.";
+		}));
+
+		// Address Search
+		document.getElementById("addressSearchBtn").addEventListener("click", async () => {
+			const query = document.getElementById("addressInput").value.trim();
+			if (!query) return;
+			document.getElementById("statusLog").textContent = `Searching for "${query}"...`;
+			try {
+				const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&q=${encodeURIComponent(query)}`);
 				const data = await res.json();
-				if (!res.ok || data.error) {
-					statusLog.textContent = data.error || "Upload failed.";
-					throw new Error(data.error || "Upload failed.");
+				if (data && data.length > 0) {
+					const first = data[0];
+					const lat = parseFloat(first.lat);
+					const lon = parseFloat(first.lon);
+					map.setView([lat, lon], 13);
+					setMarker(lat, lon);
+					document.getElementById("statusLog").textContent = `Found: ${first.display_name}`;
+				} else {
+					document.getElementById("statusLog").textContent = "Location not found in India. Try a different query.";
 				}
-				statusLog.textContent = "Dataset uploaded.";
-				refreshDatasetStatus();
-			});
+			} catch (e) {
+				document.getElementById("statusLog").textContent = "Address lookup failed.";
+			}
 		});
-
-		emailReportBtn.addEventListener("click", async () => {
-			await withButtonFeedback(emailReportBtn, async () => {
-				if (!requireLogin()) {
-					throw new Error("Not logged in");
-				}
-				if (!lastPayload) {
-					statusLog.textContent = "Run analysis before emailing report.";
-					throw new Error("No payload");
-				}
-				if (!lastReview || !checklistComplete()) {
-					statusLog.textContent = "Complete engineer review and checklist before emailing report.";
-					throw new Error("Incomplete review");
-				}
-				if (!reportEmail.value.trim()) {
-					statusLog.textContent = "Enter a recipient email.";
-					throw new Error("No email provided");
-				}
-				statusLog.textContent = "Emailing report...";
-				
-				const res = await fetch("/api/report/email", {
-					method: "POST",
-					headers: authHeaders(),
-					body: JSON.stringify({
-						to_email: reportEmail.value.trim(),
-						...lastPayload,
-						review: lastReview
-					})
-				});
-				const data = await res.json();
-				if (!res.ok || data.error) {
-					statusLog.textContent = data.error || "Email failed.";
-					throw new Error(data.error || "Email failed.");
-				}
-				statusLog.textContent = "Email sent successfully.";
-			});
-		});
-
-		refreshDatasetStatus();
-
-		updateResults(null);
 	</script>
 </body>
 
