@@ -1,4 +1,5 @@
 flask
+flask-cors
 requests
 pandas
 numpy
@@ -14,3 +15,4 @@ psycopg2-binary
 pillow
 gunicorn
 python-dotenv
+scipy
