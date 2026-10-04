@@ -151,12 +151,9 @@ class ExactReferenceCanvas(canvas.Canvas):
             # Front matter roman numerals
             roman_pages = {2: "i", 3: "ii", 4: "iii"}
             self.drawRightString(541, 32, roman_pages.get(self._pageNumber, "i"))
-        elif self._pageNumber == 5:
-            # Acknowledgement page unnumbered in template
-            pass
         else:
-            # Main Report Arabic numerals starting from 1
-            body_page = self._pageNumber - 5
+            # Main Report Arabic numerals starting from 1 (Doc Page 5 is Body Page 1)
+            body_page = self._pageNumber - 4
             self.drawRightString(541, 32, str(body_page))
 
         self.restoreState()
@@ -179,21 +176,30 @@ def create_rounded_callout(title, content_paras, styles, width=400):
     ]))
     return tbl
 
+from reportlab.platypus import Flowable
+
+class SectionAnchor(Flowable):
+    def __init__(self, sec_num, tracker_dict):
+        super().__init__()
+        self.sec_num = sec_num
+        self.tracker_dict = tracker_dict
+        self.width = 0
+        self.height = 0
+
+    def wrap(self, availWidth, availHeight):
+        return 0, 0
+
+    def draw(self):
+        if self.tracker_dict is not None and hasattr(self, 'canv') and self.canv:
+            page_num = self.canv._pageNumber
+            body_page = max(1, page_num - 4)
+            self.tracker_dict[self.sec_num] = body_page
+
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. PDF GENERATION PIPELINE
+# 3. PDF GENERATION PIPELINE (TWO-PASS DENSE PROFESSIONAL FLOW)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_pdf_document():
-    pdf_path = "d:/construction_site_selection/construction_site_selection/TERRA_AI_PROJECT_REPORT.pdf"
-    doc = SimpleDocTemplate(
-        pdf_path,
-        pagesize=A4,
-        leftMargin=54,
-        rightMargin=54,
-        topMargin=54,
-        bottomMargin=54
-    )
-
+def generate_pdf_story(page_tracker=None):
     styles = getSampleStyleSheet()
 
     # Cover Typography (Exact match to reference)
@@ -218,13 +224,13 @@ def build_pdf_document():
         spaceAfter=40
     )
 
-    # Interior Typography
+    # Interior Typography (Clean, readable, dense academic hierarchy)
     h1_style = ParagraphStyle(
         'ExactH1',
         parent=styles['Heading1'],
         fontName='Times-Bold',
-        fontSize=13,
-        leading=17,
+        fontSize=12.5,
+        leading=16,
         textColor=NAVY_TITLE,
         spaceBefore=14,
         spaceAfter=4,
@@ -234,8 +240,8 @@ def build_pdf_document():
         'ExactH2',
         parent=styles['Heading2'],
         fontName='Times-Bold',
-        fontSize=10.5,
-        leading=14,
+        fontSize=10,
+        leading=13.5,
         textColor=BLUE_SUB,
         spaceBefore=8,
         spaceAfter=3,
@@ -249,7 +255,7 @@ def build_pdf_document():
         leading=13.5,
         textColor=TEXT_DARK,
         alignment=TA_JUSTIFY,
-        spaceAfter=5
+        spaceAfter=4
     )
     caption_style = ParagraphStyle(
         'ExactCaption',
@@ -268,24 +274,24 @@ def build_pdf_document():
         fontSize=9,
         leading=12.5,
         textColor=TEXT_MUTED,
-        spaceAfter=8
+        spaceAfter=6
     )
     box_title_style = ParagraphStyle(
         'BoxTitle',
         parent=styles['Normal'],
         fontName='Times-Bold',
-        fontSize=11,
-        leading=15,
+        fontSize=10.5,
+        leading=14,
         textColor=NAVY_TITLE,
         alignment=TA_CENTER,
-        spaceAfter=6
+        spaceAfter=5
     )
     box_body_style = ParagraphStyle(
         'BoxBody',
         parent=styles['Normal'],
         fontName='Times-Roman',
-        fontSize=9.5,
-        leading=14,
+        fontSize=9.2,
+        leading=13,
         textColor=TEXT_DARK,
         alignment=TA_CENTER
     )
@@ -319,11 +325,8 @@ def build_pdf_document():
     story.append(PageBreak())
 
     # ─────────────────────────────────────────────────────────────
-    # PAGE 2–4: TABLE OF CONTENTS (EXACT DOTTED LEADERS & NUMBERS)
+    # PAGES 2 & 3: TABLE OF CONTENTS (EXACT DOTTED LEADERS & NUMBERS)
     # ─────────────────────────────────────────────────────────────
-    story.append(Paragraph("<b>Contents</b>", ParagraphStyle('TOCTitle', fontName='Times-Bold', fontSize=14, leading=18, textColor=NAVY_TITLE, spaceAfter=8)))
-    story.append(HRFlowable(width="100%", thickness=0.8, color=GOLD_ACCENT, spaceAfter=8))
-
     full_toc = []
     for num, title, _ in SECTIONS_CONTENT:
         full_toc.append((num, sanitize_text(title)))
@@ -331,18 +334,17 @@ def build_pdf_document():
     full_toc.append((51, "Project Photographs"))
     full_toc.append((52, "GEOTAGGED PHOTOGRAPHS"))
 
-    p1_items = full_toc[:20]
-    p2_items = full_toc[20:40]
-    p3_items = full_toc[40:]
+    p1_items = full_toc[:26]
+    p2_items = full_toc[26:]
 
-    def render_toc_page(items, start_page_num):
+    def render_toc_table(items):
         t_data = []
-        for idx, (sec_n, sec_t) in enumerate(items):
-            p_num = idx + start_page_num
+        for sec_n, sec_t in items:
+            p_val = str(page_tracker.get(sec_n, sec_n)) if page_tracker else str(sec_n)
             t_data.append([
                 Paragraph(f"<b><font color='#0D3B66'>{sec_n}</font></b>", body_style),
                 Paragraph(f"{sec_t} <font color='#94A3B8'>. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</font>", body_style),
-                Paragraph(f"<b><font color='#0D3B66'>{p_num}</font></b>", ParagraphStyle('R', parent=body_style, alignment=TA_RIGHT))
+                Paragraph(f"<b><font color='#0D3B66'>{p_val}</font></b>", ParagraphStyle('R', parent=body_style, alignment=TA_RIGHT))
             ])
         tbl = Table(t_data, colWidths=[25, 420, 42])
         tbl.setStyle(TableStyle([
@@ -351,17 +353,20 @@ def build_pdf_document():
         ]))
         return tbl
 
-    story.append(render_toc_page(p1_items, 1))
+    story.append(Paragraph("<b>Contents</b>", ParagraphStyle('TOCTitle', fontName='Times-Bold', fontSize=14, leading=18, textColor=NAVY_TITLE, spaceAfter=8)))
+    story.append(HRFlowable(width="100%", thickness=0.8, color=GOLD_ACCENT, spaceAfter=8))
+    story.append(render_toc_table(p1_items))
     story.append(PageBreak())
-    story.append(render_toc_page(p2_items, 21))
-    story.append(PageBreak())
-    story.append(render_toc_page(p3_items, 41))
+
+    story.append(Paragraph("<b>Contents (Continued)</b>", ParagraphStyle('TOCTitle2', fontName='Times-Bold', fontSize=13, leading=17, textColor=NAVY_TITLE, spaceAfter=8)))
+    story.append(HRFlowable(width="100%", thickness=0.8, color=GOLD_ACCENT, spaceAfter=8))
+    story.append(render_toc_table(p2_items))
     story.append(PageBreak())
 
     # ─────────────────────────────────────────────────────────────
-    # PAGE 5: ACKNOWLEDGEMENT (DEDICATED ACADEMIC PAGE)
+    # PAGE 4: ACKNOWLEDGEMENT (DEDICATED ACADEMIC PAGE)
     # ─────────────────────────────────────────────────────────────
-    story.append(Spacer(1, 40))
+    story.append(Spacer(1, 30))
     story.append(Paragraph("<b>ACKNOWLEDGEMENT</b>", ParagraphStyle('AckH', fontName='Times-Bold', fontSize=14, leading=18, textColor=NAVY_TITLE, alignment=TA_CENTER, spaceAfter=14)))
     story.append(HRFlowable(width="100%", thickness=0.8, color=GOLD_ACCENT, spaceAfter=20))
 
@@ -376,7 +381,7 @@ def build_pdf_document():
     story.append(PageBreak())
 
     # ─────────────────────────────────────────────────────────────
-    # PAGE 6 ONWARDS: MAIN REPORT (SECTIONS 1 TO 52)
+    # MAIN REPORT (SECTIONS 1 TO 49 - NATURAL DENSE FLOW)
     # ─────────────────────────────────────────────────────────────
     img_cert_path = "tnwise_extracted/page_4_img_2_X2.jpg"
     img_cert_vishali_path = "tnwise_extracted/vishali_certificate.jpg"
@@ -398,8 +403,9 @@ def build_pdf_document():
         sec_title_san = sanitize_text(sec_title)
         sec_body_san = sanitize_text(sec_body)
 
+        story.append(SectionAnchor(sec_num, page_tracker))
         story.append(Paragraph(f"<b><font color='#0D3B66'>{sec_num}</font> <font color='#0D3B66'>{sec_title_san}</font></b>", h1_style))
-        story.append(HRFlowable(width="100%", thickness=0.6, color=GOLD_ACCENT, spaceAfter=5))
+        story.append(HRFlowable(width="100%", thickness=0.6, color=GOLD_ACCENT, spaceAfter=4))
 
         paragraphs = sec_body_san.strip().split('\n\n')
         for p_text in paragraphs:
@@ -414,21 +420,23 @@ def build_pdf_document():
                     story.append(Paragraph(formatted, body_style))
                 story.append(Spacer(1, 2))
 
-        # Insert callout box where defined
+        # Insert callout box where defined (wrapped in KeepTogether to avoid awkward page breaks)
         if sec_num in callouts_content:
             c_title, c_paras = callouts_content[sec_num]
-            story.append(Spacer(1, 4))
+            story.append(Spacer(1, 3))
             c_box = create_rounded_callout(c_title, c_paras, custom_styles, width=460)
-            story.append(Table([[c_box]], colWidths=[487], style=[('ALIGN', (0,0), (-1,-1), 'CENTER')]))
+            story.append(KeepTogether([Table([[c_box]], colWidths=[487], style=[('ALIGN', (0,0), (-1,-1), 'CENTER')])]))
             story.append(Spacer(1, 4))
 
-        story.append(PageBreak())
+        story.append(Spacer(1, 6))
 
     # ─────────────────────────────────────────────────────────────
     # END SECTIONS: CERTIFICATES & PHOTOGRAPHS (50, 51, 52)
     # ─────────────────────────────────────────────────────────────
 
     # 50. Project Certificates
+    story.append(PageBreak())
+    story.append(SectionAnchor(50, page_tracker))
     story.append(Paragraph("<b><font color='#0D3B66'>50</font> <font color='#0D3B66'>Certificate of Completion / Project Certificates</font></b>", h1_style))
     story.append(HRFlowable(width="100%", thickness=0.6, color=GOLD_ACCENT, spaceAfter=6))
     story.append(Paragraph("This section presents the official certificates of appreciation and competitive recognition awarded to the project team members in TANCAM's Hackathon for Tamil Nadu Women in Science and Engineering (TNWISE 2026).", body_style))
@@ -456,9 +464,9 @@ def build_pdf_document():
         story.append(cert_cells[0])
     story.append(Spacer(1, 10))
 
-    story.append(PageBreak())
-
     # 51. Project Photographs
+    story.append(PageBreak())
+    story.append(SectionAnchor(51, page_tracker))
     story.append(Paragraph("<b><font color='#0D3B66'>51</font> <font color='#0D3B66'>Project Photographs</font></b>", h1_style))
     story.append(HRFlowable(width="100%", thickness=0.6, color=GOLD_ACCENT, spaceAfter=6))
     story.append(Paragraph("This section presents photographic documentation of the stage award felicitation and institutional review sessions.", body_style))
@@ -481,9 +489,9 @@ def build_pdf_document():
         story.append(img_table)
         story.append(Spacer(1, 10))
 
-    story.append(PageBreak())
-
     # 52. GEOTAGGED PHOTOGRAPHS
+    story.append(PageBreak())
+    story.append(SectionAnchor(52, page_tracker))
     story.append(Paragraph("<b><font color='#0D3B66'>52</font> <font color='#0D3B66'>GEOTAGGED PHOTOGRAPHS</font></b>", h1_style))
     story.append(HRFlowable(width="100%", thickness=0.6, color=GOLD_ACCENT, spaceAfter=6))
     story.append(Paragraph("This section presents geotagged photographic documentation verifying project demonstration and live evaluation during the hackathon.", body_style))
@@ -496,8 +504,38 @@ def build_pdf_document():
         story.append(Image(img_demo_path, width=475, height=335))
         story.append(Spacer(1, 10))
 
-    doc.build(story, canvasmaker=ExactReferenceCanvas)
-    print(f"SUCCESS: Generated Exact Reference-Matched PDF document -> {pdf_path}")
+    return story
+
+def build_pdf_document():
+    import io
+    pdf_path = "d:/construction_site_selection/construction_site_selection/TERRA_AI_PROJECT_REPORT.pdf"
+    
+    # Pass 1: Measure exact page positions of every section
+    page_tracker = {}
+    pass1_buf = io.BytesIO()
+    doc_pass1 = SimpleDocTemplate(
+        pass1_buf,
+        pagesize=A4,
+        leftMargin=54,
+        rightMargin=54,
+        topMargin=54,
+        bottomMargin=54
+    )
+    story1 = generate_pdf_story(page_tracker)
+    doc_pass1.build(story1, canvasmaker=ExactReferenceCanvas)
+    
+    # Pass 2: Render final PDF with accurate dynamic TOC page numbers
+    doc_pass2 = SimpleDocTemplate(
+        pdf_path,
+        pagesize=A4,
+        leftMargin=54,
+        rightMargin=54,
+        topMargin=54,
+        bottomMargin=54
+    )
+    story2 = generate_pdf_story(page_tracker)
+    doc_pass2.build(story2, canvasmaker=ExactReferenceCanvas)
+    print(f"SUCCESS: Generated Exact Reference-Matched PDF document (Two-Pass Dense Flow) -> {pdf_path}")
     return pdf_path
 
 # ─────────────────────────────────────────────────────────────────────────────
