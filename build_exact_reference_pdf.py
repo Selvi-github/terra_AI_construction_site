@@ -156,7 +156,7 @@ class ExactReferenceCanvas(canvas.Canvas):
             pass
         else:
             # Main Report Arabic numerals starting from 1
-            body_page = self._pageNumber - 4
+            body_page = self._pageNumber - 5
             self.drawRightString(541, 32, str(body_page))
 
         self.restoreState()
@@ -351,11 +351,11 @@ def build_pdf_document():
         ]))
         return tbl
 
-    story.append(render_toc_page(p1_items, 2))
+    story.append(render_toc_page(p1_items, 1))
     story.append(PageBreak())
-    story.append(render_toc_page(p2_items, 19))
+    story.append(render_toc_page(p2_items, 21))
     story.append(PageBreak())
-    story.append(render_toc_page(p3_items, 39))
+    story.append(render_toc_page(p3_items, 41))
     story.append(PageBreak())
 
     # ─────────────────────────────────────────────────────────────
@@ -416,12 +416,12 @@ def build_pdf_document():
         # Insert callout box where defined
         if sec_num in callouts_content:
             c_title, c_paras = callouts_content[sec_num]
-            story.append(Spacer(1, 3))
+            story.append(Spacer(1, 4))
             c_box = create_rounded_callout(c_title, c_paras, custom_styles, width=460)
             story.append(Table([[c_box]], colWidths=[487], style=[('ALIGN', (0,0), (-1,-1), 'CENTER')]))
             story.append(Spacer(1, 4))
 
-        story.append(Spacer(1, 4))
+        story.append(PageBreak())
 
     # ─────────────────────────────────────────────────────────────
     # END SECTIONS: CERTIFICATES & PHOTOGRAPHS (50, 51, 52)
@@ -448,18 +448,21 @@ def build_pdf_document():
     story.append(Paragraph("This section presents photographic documentation of the stage award felicitation and institutional review sessions.", body_style))
     story.append(Spacer(1, 4))
 
-    if os.path.exists(img_stage_path):
-        story.append(Paragraph("<b><font color='#0D3B66'>Figure 2: Award Felicitation on Main Stage at TNWISE 2026 Hackathon</font></b>", caption_style))
-        story.append(Paragraph("<b>Description:</b> Team members Vaira Selvi S, Vishali S, and Mohana Priya K receiving the Special Mention Award on the main stage at Kumaraguru College of Technology from dignitaries representing TANCAM, TIDCO, and Dassault Systèmes.", desc_style))
-        story.append(Spacer(1, 2))
-        story.append(Image(img_stage_path, width=460, height=310))
-        story.append(Spacer(1, 8))
-
-    if os.path.exists(img_team_path):
-        story.append(Paragraph("<b><font color='#0D3B66'>Figure 3: Institutional Review and Certificate Presentation</font></b>", caption_style))
-        story.append(Paragraph("<b>Description:</b> Project team presenting the award certificate and demonstrating the software system to the Principal and faculty at Kamaraj College of Engineering and Technology.", desc_style))
-        story.append(Spacer(1, 2))
-        story.append(Image(img_team_path, width=460, height=310))
+    if os.path.exists(img_stage_path) and os.path.exists(img_team_path):
+        story.append(Paragraph("<b><font color='#0D3B66'>Figure 2: Award Felicitation on Main Stage &nbsp;|&nbsp; Figure 3: Institutional Review</font></b>", caption_style))
+        story.append(Paragraph("<b>Description:</b> (Left) Team members Vaira Selvi S, Vishali S, and Mohana Priya K receiving the Special Mention Award on the main stage at Kumaraguru College of Technology from dignitaries representing TANCAM, TIDCO, and Dassault Systèmes. (Right) Project team presenting the award certificate and demonstrating the software system to the Principal and faculty at Kamaraj College of Engineering and Technology.", desc_style))
+        story.append(Spacer(1, 4))
+        
+        img_table = Table([[
+            Image(img_stage_path, width=230, height=275),
+            Image(img_team_path, width=230, height=275)
+        ]], colWidths=[238, 238])
+        img_table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('PADDING', (0,0), (-1,-1), 0),
+        ]))
+        story.append(img_table)
         story.append(Spacer(1, 10))
 
     story.append(PageBreak())
