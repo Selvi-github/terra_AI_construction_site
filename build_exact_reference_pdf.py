@@ -379,6 +379,7 @@ def build_pdf_document():
     # PAGE 6 ONWARDS: MAIN REPORT (SECTIONS 1 TO 52)
     # ─────────────────────────────────────────────────────────────
     img_cert_path = "tnwise_extracted/page_4_img_2_X2.jpg"
+    img_cert_vishali_path = "tnwise_extracted/vishali_certificate.jpg"
     img_stage_path = "tnwise_extracted/page_3_img_2_X2.jpg"
     img_team_path = "tnwise_extracted/page_1_img_2_X2.jpg"
     img_demo_path = "tnwise_extracted/page_2_img_2_X2.jpg"
@@ -430,15 +431,30 @@ def build_pdf_document():
     # 50. Project Certificates
     story.append(Paragraph("<b><font color='#0D3B66'>50</font> <font color='#0D3B66'>Certificate of Completion / Project Certificates</font></b>", h1_style))
     story.append(HRFlowable(width="100%", thickness=0.6, color=GOLD_ACCENT, spaceAfter=6))
-    story.append(Paragraph("This section presents the official certificate of appreciation and competitive recognition awarded to the project team.", body_style))
+    story.append(Paragraph("This section presents the official certificates of appreciation and competitive recognition awarded to the project team members in TANCAM's Hackathon for Tamil Nadu Women in Science and Engineering (TNWISE 2026).", body_style))
     story.append(Spacer(1, 4))
 
+    story.append(Paragraph("<b><font color='#0D3B66'>Figure 1A: Certificate – Vaira Selvi S &nbsp;|&nbsp; Figure 1B: Certificate – Vishali S</font></b>", caption_style))
+    story.append(Paragraph("<b>Description:</b> Official Certificates of Appreciation awarded to team lead Vaira Selvi S and team member Vishali S from Kamaraj College of Engineering and Technology for achieving the Special Mention Award in TANCAM's Hackathon (TNWISE 2026) conducted by Tamil Nadu Centre of Excellence for Advanced Manufacturing (TANCAM), Chennai in association with Dassault Systèmes, TIDCO, and Kumaraguru College of Technology, Coimbatore on 12th March 2026.", desc_style))
+    story.append(Spacer(1, 4))
+
+    cert_cells = []
     if os.path.exists(img_cert_path):
-        story.append(Paragraph("<b><font color='#0D3B66'>Figure 1: TNWISE 2026 Special Mention Award Certificate</font></b>", caption_style))
-        story.append(Paragraph("<b>Description:</b> Official Certificate of Appreciation awarded to Vaira Selvi S & Team from Kamaraj College of Engineering and Technology for achieving the Special Mention Award in TANCAM's Hackathon for Tamil Nadu Women in Science and Engineering (TNWISE 2026) conducted by Tamil Nadu Centre of Excellence for Advanced Manufacturing (TANCAM), Chennai in association with Dassault Systèmes, TIDCO, and Kumaraguru College of Technology, Coimbatore on 12th March 2026.", desc_style))
-        story.append(Spacer(1, 4))
-        story.append(Image(img_cert_path, width=475, height=325))
-        story.append(Spacer(1, 10))
+        cert_cells.append(Image(img_cert_path, width=230, height=165))
+    if os.path.exists(img_cert_vishali_path):
+        cert_cells.append(Image(img_cert_vishali_path, width=230, height=165))
+    
+    if len(cert_cells) == 2:
+        cert_table = Table([[cert_cells[0], cert_cells[1]]], colWidths=[238, 238])
+        cert_table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('PADDING', (0,0), (-1,-1), 0),
+        ]))
+        story.append(cert_table)
+    elif len(cert_cells) == 1:
+        story.append(cert_cells[0])
+    story.append(Spacer(1, 10))
 
     story.append(PageBreak())
 
@@ -603,6 +619,7 @@ def build_docx_document():
 
     # ── ALL 52 SECTIONS ──
     img_cert_path = "tnwise_extracted/page_4_img_2_X2.jpg"
+    img_cert_vishali_path = "tnwise_extracted/vishali_certificate.jpg"
     img_stage_path = "tnwise_extracted/page_3_img_2_X2.jpg"
     img_team_path = "tnwise_extracted/page_1_img_2_X2.jpg"
     img_demo_path = "tnwise_extracted/page_2_img_2_X2.jpg"
@@ -640,10 +657,17 @@ def build_docx_document():
     h50 = doc.add_heading("50 Certificate of Completion / Project Certificates", level=1)
     h50.runs[0].font.color.rgb = RGBColor(13, 59, 102)
     p50 = doc.add_paragraph()
-    p50.add_run("Figure 1: TNWISE 2026 Special Mention Award Certificate\n").bold = True
-    p50.add_run("Description: Official Certificate of Appreciation awarded to Vaira Selvi S & Team from Kamaraj College of Engineering and Technology for achieving the Special Mention Award in TANCAM's Hackathon for Tamil Nadu Women in Science and Engineering (TNWISE 2026).")
+    p50.add_run("Figure 1A: TNWISE 2026 Special Mention Award Certificate – Vaira Selvi S\n").bold = True
+    p50.add_run("Description: Official Certificate of Appreciation awarded to team lead Vaira Selvi S from Kamaraj College of Engineering and Technology for achieving the Special Mention Award in TANCAM's Hackathon (TNWISE 2026).\n")
     if os.path.exists(img_cert_path):
-        doc.add_picture(img_cert_path, width=Inches(5.8))
+        doc.add_picture(img_cert_path, width=Inches(5.6))
+        doc.add_paragraph().paragraph_format.space_after = Pt(8)
+
+    p50b = doc.add_paragraph()
+    p50b.add_run("Figure 1B: TNWISE 2026 Special Mention Award Certificate – Vishali S\n").bold = True
+    p50b.add_run("Description: Official Certificate of Appreciation awarded to team member Vishali S from Kamaraj College of Engineering and Technology for achieving the Special Mention Award in TANCAM's Hackathon (TNWISE 2026).\n")
+    if os.path.exists(img_cert_vishali_path):
+        doc.add_picture(img_cert_vishali_path, width=Inches(5.6))
         doc.add_paragraph().paragraph_format.space_after = Pt(12)
 
     doc.add_page_break()
