@@ -383,8 +383,8 @@ Development Timeline:
 9. ISRIC — World Soil Information. SoilGrids 250m: Global gridded soil information.
 10. NASA Langley Research Center. NASA POWER Project: Prediction of Worldwide Energy Resources.
 """),
-    (47, "Feedback, Faculty Review & Conclusion", """
-47.1 Reviewer Feedback & Mathematical Rectifications
+    (47, "Feedback and Conclusion", """
+47.1 Feedback
 Following rigorous academic review on coastal coordinates (12.9340, 80.2592), all eleven reviewer observations were mathematically rectified:
 • Checklist compliance standardized to explicit weighted sum (3/5 PASS = 60.0%).
 • Leopold index normalized with explicit mathematical formula (Net Score -46 -> Index 75.8/100).
@@ -393,9 +393,9 @@ Following rigorous academic review on coastal coordinates (12.9340, 80.2592), al
 • Disclaimers added framing the tool for Stage-0/1 preliminary screening.
 
 47.2 Conclusion
-TerraAI establishes a benchmark in automated geospatial engineering and environmental assessment. By uniting machine learning, satellite earth observation, Indian Standards compliance, and 3D simulation, the project demonstrates how modern AI can advance sustainable, disaster-resilient infrastructure development.
+The Construction Site Viability and Lifespan Prediction System establishes a new benchmark in automated geospatial engineering and environmental assessment. By uniting machine learning, satellite earth observation, Indian Standards compliance, and 3D simulation, the project demonstrates how modern AI can advance sustainable, disaster-resilient infrastructure development.
 """),
-    (48, "Sample API Request and Response Payloads", """
+    (48, "Sample API Request and Response", """
 Sample API Request:
 POST /api/analyze HTTP/1.1
 Content-Type: application/json
@@ -439,7 +439,7 @@ Sample API Response:
   }
 }
 """),
-    (49, "Glossary of Technical & Civil Engineering Terms", """
+    (49, "Glossary of Terms", """
 • Bearing Capacity (kN/m²): The maximum contact pressure between the foundation substructure and supporting subsoil without shear failure or excessive settlement (IS 1904).
 • Standard Penetration Test (SPT N-Value): In-situ dynamic penetration test indicating relative soil density and shear strength.
 • Eco-Sensitive Zone (ESZ): Statutory 10 km buffer zone surrounding National Parks and Sanctuaries regulated under MoEFCC EIA 2006.
